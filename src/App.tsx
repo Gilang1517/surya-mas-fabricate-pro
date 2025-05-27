@@ -11,6 +11,7 @@ import Materials from "./pages/Materials";
 import MaterialDetails from "./pages/MaterialDetails";
 import Machines from "./pages/Machines";
 import MachineDetails from "./pages/MachineDetails";
+import MachineTransactions from "./pages/MachineTransactions";
 import Transactions from "./pages/Transactions";
 import NotFound from "./pages/NotFound";
 import Layout from "./components/Layout";
@@ -31,6 +32,7 @@ const App = () => (
             <Route path="/transactions" element={<Transactions />} />
             <Route path="/machines" element={<Machines />} />
             <Route path="/machines/:id" element={<MachineDetails />} />
+            <Route path="/machine-transactions" element={<MachineTransactions />} />
             <Route path="*" element={<NotFound />} />
           </Route>
         </Routes>
