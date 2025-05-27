@@ -11,6 +11,7 @@ import Materials from "./pages/Materials";
 import MaterialDetails from "./pages/MaterialDetails";
 import Machines from "./pages/Machines";
 import MachineDetails from "./pages/MachineDetails";
+import Transactions from "./pages/Transactions";
 import NotFound from "./pages/NotFound";
 import Layout from "./components/Layout";
 
@@ -27,6 +28,7 @@ const App = () => (
             <Route path="/" element={<Dashboard />} />
             <Route path="/materials" element={<Materials />} />
             <Route path="/materials/:id" element={<MaterialDetails />} />
+            <Route path="/transactions" element={<Transactions />} />
             <Route path="/machines" element={<Machines />} />
             <Route path="/machines/:id" element={<MachineDetails />} />
             <Route path="*" element={<NotFound />} />

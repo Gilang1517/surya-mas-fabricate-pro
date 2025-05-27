@@ -9,7 +9,8 @@ import {
   BarChart3, 
   Settings,
   MenuIcon,
-  X
+  X,
+  ArrowRightLeft
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useIsMobile } from '@/hooks/use-mobile';
@@ -101,6 +102,21 @@ const Sidebar = () => {
           >
             <Package className="h-5 w-5" />
             <span>Materials</span>
+          </NavLink>
+
+          <NavLink 
+            to="/transactions" 
+            onClick={() => isMobile && setExpanded(false)}
+            className={({ isActive }) =>
+              `flex items-center gap-3 px-3 py-2 rounded-md transition-colors ${
+                isActive 
+                  ? 'bg-company-blue text-white' 
+                  : 'text-gray-700 hover:bg-gray-100'
+              }`
+            }
+          >
+            <ArrowRightLeft className="h-5 w-5" />
+            <span>Transactions</span>
           </NavLink>
           
           <NavLink 
