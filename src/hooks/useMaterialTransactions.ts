@@ -3,11 +3,13 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import type { Tables } from '@/integrations/supabase/types';
 
-export type MaterialTransaction = Tables<'material_transactions'>;
+export type MaterialTransaction = Tables<'material_transactions'> & {
+  materials?: Tables<'materials'>;
+};
 
 export const useMaterialTransactions = () => {
   return useQuery({
-    queryKey: ['material_transactions'],
+    queryKey: ['material-transactions'],
     queryFn: async () => {
       const { data, error } = await supabase
         .from('material_transactions')
@@ -22,7 +24,7 @@ export const useMaterialTransactions = () => {
         .order('created_at', { ascending: false });
       
       if (error) throw error;
-      return data;
+      return data as MaterialTransaction[];
     },
   });
 };
@@ -31,7 +33,7 @@ export const useCreateMaterialTransaction = () => {
   const queryClient = useQueryClient();
   
   return useMutation({
-    mutationFn: async (transaction: Omit<MaterialTransaction, 'id' | 'created_at' | 'updated_at'>) => {
+    mutationFn: async (transaction: Omit<Tables<'material_transactions'>, 'id' | 'created_at' | 'updated_at'>) => {
       const { data, error } = await supabase
         .from('material_transactions')
         .insert(transaction)
@@ -42,7 +44,8 @@ export const useCreateMaterialTransaction = () => {
       return data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['material_transactions'] });
+      queryClient.invalidateQueries({ queryKey: ['material-transactions'] });
+      queryClient.invalidateQueries({ queryKey: ['materials'] });
     },
   });
 };

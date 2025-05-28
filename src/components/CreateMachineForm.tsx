@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -70,7 +69,15 @@ const CreateMachineForm = ({ open, onClose }: CreateMachineFormProps) => {
   const handleSubmit = async (data: MachineFormData) => {
     try {
       await createMachine.mutateAsync({
-        ...data,
+        asset_number: data.asset_number,
+        name: data.name,
+        description: data.description || '',
+        manufacturer: data.manufacturer || '',
+        model: data.model || '',
+        serial_number: data.serial_number || '',
+        purchase_date: data.purchase_date || '',
+        purchase_price: data.purchase_price || 0,
+        location: data.location || '',
         status: 'operational',
       });
       toast({

@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Control } from 'react-hook-form';
 import {
@@ -17,7 +16,7 @@ import {
 } from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { machines } from './machineData';
+import { useMachines } from '@/hooks/useMachines';
 import TransactionTypeFields from './TransactionTypeFields';
 
 interface MachineTransactionFormFieldsProps {
@@ -31,6 +30,8 @@ const MachineTransactionFormFields: React.FC<MachineTransactionFormFieldsProps> 
   control,
   onTransactionTypeChange,
 }) => {
+  const { data: machines = [] } = useMachines();
+
   return (
     <>
       <div className="grid grid-cols-2 gap-4">
@@ -49,7 +50,7 @@ const MachineTransactionFormFields: React.FC<MachineTransactionFormFieldsProps> 
                 <SelectContent>
                   {machines.map((machine) => (
                     <SelectItem key={machine.id} value={machine.id}>
-                      {machine.number} - {machine.name}
+                      {machine.asset_number} - {machine.name}
                     </SelectItem>
                   ))}
                 </SelectContent>

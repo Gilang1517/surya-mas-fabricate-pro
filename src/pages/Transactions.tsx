@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { 
   Search, 
@@ -146,26 +147,26 @@ const Transactions = () => {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead className="w-[150px] cursor-pointer" onClick={() => handleSort('transactionNumber')}>
+                  <TableHead className="w-[150px] cursor-pointer" onClick={() => handleSort('transaction_number')}>
                     <div className="flex items-center">
                       Transaction #
-                      {sortBy === 'transactionNumber' && (
+                      {sortBy === 'transaction_number' && (
                         <ArrowUpDown className="ml-2 h-3 w-3" />
                       )}
                     </div>
                   </TableHead>
-                  <TableHead className="cursor-pointer" onClick={() => handleSort('materialNumber')}>
+                  <TableHead className="cursor-pointer" onClick={() => handleSort('material_id')}>
                     <div className="flex items-center">
                       Material
-                      {sortBy === 'materialNumber' && (
+                      {sortBy === 'material_id' && (
                         <ArrowUpDown className="ml-2 h-3 w-3" />
                       )}
                     </div>
                   </TableHead>
-                  <TableHead className="text-center cursor-pointer" onClick={() => handleSort('transactionType')}>
+                  <TableHead className="text-center cursor-pointer" onClick={() => handleSort('transaction_type')}>
                     <div className="flex items-center justify-center">
                       Type
-                      {sortBy === 'transactionType' && (
+                      {sortBy === 'transaction_type' && (
                         <ArrowUpDown className="ml-2 h-3 w-3" />
                       )}
                     </div>
@@ -178,10 +179,10 @@ const Transactions = () => {
                       )}
                     </div>
                   </TableHead>
-                  <TableHead className="hidden md:table-cell cursor-pointer" onClick={() => handleSort('date')}>
+                  <TableHead className="hidden md:table-cell cursor-pointer" onClick={() => handleSort('transaction_date')}>
                     <div className="flex items-center">
                       Date
-                      {sortBy === 'date' && (
+                      {sortBy === 'transaction_date' && (
                         <ArrowUpDown className="ml-2 h-3 w-3" />
                       )}
                     </div>
@@ -191,7 +192,13 @@ const Transactions = () => {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {sortedTransactions.length === 0 ? (
+                {isLoading ? (
+                  <TableRow>
+                    <TableCell colSpan={7} className="h-24 text-center">
+                      Loading...
+                    </TableCell>
+                  </TableRow>
+                ) : sortedTransactions.length === 0 ? (
                   <TableRow>
                     <TableCell colSpan={7} className="h-24 text-center">
                       No transactions found
@@ -205,8 +212,8 @@ const Transactions = () => {
                       </TableCell>
                       <TableCell>
                         <div>
-                          <div className="font-medium">{transaction.material_number}</div>
-                          <div className="text-sm text-gray-500">{transaction.material_name}</div>
+                          <div className="font-medium">{transaction.materials?.material_number || '-'}</div>
+                          <div className="text-sm text-gray-500">{transaction.materials?.name || '-'}</div>
                         </div>
                       </TableCell>
                       <TableCell className="text-center">
@@ -221,8 +228,8 @@ const Transactions = () => {
                         <div className="text-xs text-gray-500">MT: {transaction.movement_type}</div>
                       </TableCell>
                       <TableCell className="hidden md:table-cell">
-                        <div>{formatDate(transaction.created_at)}</div>
-                        <div className="text-xs text-gray-500">{transaction.time}</div>
+                        <div>{formatDate(transaction.transaction_date)}</div>
+                        <div className="text-xs text-gray-500">{formatDate(transaction.created_at)}</div>
                       </TableCell>
                       <TableCell className="text-center">
                         <span className={`px-2 py-1 rounded-full text-xs capitalize ${getStatusColor(transaction.status)}`}>
@@ -259,8 +266,7 @@ const Transactions = () => {
           
           <div className="flex items-center justify-end space-x-2 py-4">
             <div className="text-sm text-gray-500">
-              Showing <span className="font-medium">{sortedTransactions.length}</span> of{" "}
-              <span className="font-medium">{transactions.length}</span> transactions
+              <span className="font-medium">{sortedTransactions.length}</span> transactions found
             </div>
           </div>
         </CardContent>

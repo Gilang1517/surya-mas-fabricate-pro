@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -27,15 +27,15 @@ import {
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
+import { useToast } from '@/hooks/use-toast';
 import { useMaterials } from '@/hooks/useMaterials';
 import { useCreateMaterialTransaction } from '@/hooks/useMaterialTransactions';
-import { useToast } from '@/hooks/use-toast';
 
 const transactionSchema = z.object({
   transaction_number: z.string().min(1, "Transaction number is required"),
-  material_id: z.string().min(1, "Material is required"),
   transaction_type: z.enum(['inbound', 'outbound', 'transfer', 'adjustment']),
-  quantity: z.number().min(1, "Quantity must be greater than 0"),
+  material_id: z.string().min(1, "Material is required"),
+  quantity: z.number().min(1, "Quantity must be at least 1"),
   movement_type: z.string().min(1, "Movement type is required"),
   reference_document: z.string().optional(),
   notes: z.string().optional(),
@@ -52,55 +52,34 @@ const CreateMaterialTransactionForm = ({ open, onClose }: CreateMaterialTransact
   const { toast } = useToast();
   const { data: materials = [] } = useMaterials();
   const createTransaction = useCreateMaterialTransaction();
+  const [selectedMaterial, setSelectedMaterial] = useState<any>(null);
 
   const form = useForm<TransactionFormData>({
     resolver: zodResolver(transactionSchema),
     defaultValues: {
-      transaction_number: '',
-      material_id: '',
+      transaction_number: `TRX-${Date.now()}`,
       quantity: 1,
-      movement_type: '',
     }
   });
 
-  const selectedTransactionType = form.watch('transaction_type');
-
-  const getMovementTypeOptions = (type: string) => {
-    switch (type) {
-      case 'inbound':
-        return [
-          { value: '101', label: '101 - GR for Purchase Order' },
-          { value: '102', label: '102 - GR Reversal' },
-        ];
-      case 'outbound':
-        return [
-          { value: '201', label: '201 - Goods Issue for Cost Center' },
-          { value: '261', label: '261 - Goods Issue for Production' },
-        ];
-      case 'transfer':
-        return [
-          { value: '311', label: '311 - Transfer Plant to Plant' },
-          { value: '301', label: '301 - Transfer Storage Location' },
-        ];
-      case 'adjustment':
-        return [
-          { value: '551', label: '551 - Scrap' },
-          { value: '701', label: '701 - Inventory Difference' },
-        ];
-      default:
-        return [];
-    }
-  };
+  const selectedMaterialData = materials.find(m => m.id === form.watch('material_id'));
 
   const handleSubmit = async (data: TransactionFormData) => {
     try {
-      const selectedMaterial = materials.find(m => m.id === data.material_id);
       await createTransaction.mutateAsync({
-        ...data,
-        unit: selectedMaterial?.unit || 'Piece',
+        transaction_number: data.transaction_number,
+        transaction_type: data.transaction_type,
+        material_id: data.material_id,
+        quantity: data.quantity,
+        movement_type: data.movement_type,
+        reference_document: data.reference_document || '',
+        notes: data.notes || '',
+        unit: selectedMaterialData?.unit || '',
+        transaction_date: new Date().toISOString().split('T')[0],
         status: 'completed',
-        created_by: 'Current User',
+        created_by: 'System User',
       });
+      
       toast({
         title: "Transaction berhasil dibuat",
         description: "Data transaksi material telah disimpan ke database.",
@@ -133,8 +112,32 @@ const CreateMaterialTransactionForm = ({ open, onClose }: CreateMaterialTransact
                   <FormItem>
                     <FormLabel>Transaction Number</FormLabel>
                     <FormControl>
-                      <Input placeholder="TXN-MAT-001" {...field} />
+                      <Input {...field} />
                     </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="transaction_type"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Transaction Type</FormLabel>
+                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select transaction type" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="inbound">Inbound</SelectItem>
+                        <SelectItem value="outbound">Outbound</SelectItem>
+                        <SelectItem value="transfer">Transfer</SelectItem>
+                        <SelectItem value="adjustment">Adjustment</SelectItem>
+                      </SelectContent>
+                    </Select>
                     <FormMessage />
                   </FormItem>
                 )}
@@ -167,23 +170,19 @@ const CreateMaterialTransactionForm = ({ open, onClose }: CreateMaterialTransact
 
               <FormField
                 control={form.control}
-                name="transaction_type"
+                name="quantity"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Transaction Type</FormLabel>
-                    <Select onValueChange={field.onChange} defaultValue={field.value}>
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select type" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        <SelectItem value="inbound">Inbound (Receipt)</SelectItem>
-                        <SelectItem value="outbound">Outbound (Issue)</SelectItem>
-                        <SelectItem value="transfer">Transfer</SelectItem>
-                        <SelectItem value="adjustment">Adjustment</SelectItem>
-                      </SelectContent>
-                    </Select>
+                    <FormLabel>
+                      Quantity {selectedMaterialData && `(${selectedMaterialData.unit})`}
+                    </FormLabel>
+                    <FormControl>
+                      <Input 
+                        type="number"
+                        {...field}
+                        onChange={(e) => field.onChange(parseInt(e.target.value) || 0)}
+                      />
+                    </FormControl>
                     <FormMessage />
                   </FormItem>
                 )}
@@ -202,33 +201,14 @@ const CreateMaterialTransactionForm = ({ open, onClose }: CreateMaterialTransact
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        {getMovementTypeOptions(selectedTransactionType).map((option) => (
-                          <SelectItem key={option.value} value={option.value}>
-                            {option.label}
-                          </SelectItem>
-                        ))}
+                        <SelectItem value="receipt">Receipt</SelectItem>
+                        <SelectItem value="issue">Issue</SelectItem>
+                        <SelectItem value="transfer_in">Transfer In</SelectItem>
+                        <SelectItem value="transfer_out">Transfer Out</SelectItem>
+                        <SelectItem value="adjustment_in">Adjustment In</SelectItem>
+                        <SelectItem value="adjustment_out">Adjustment Out</SelectItem>
                       </SelectContent>
                     </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="quantity"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Quantity</FormLabel>
-                    <FormControl>
-                      <Input 
-                        type="number"
-                        min="1"
-                        placeholder="1"
-                        {...field}
-                        onChange={(e) => field.onChange(parseInt(e.target.value) || 1)}
-                      />
-                    </FormControl>
                     <FormMessage />
                   </FormItem>
                 )}
@@ -241,7 +221,7 @@ const CreateMaterialTransactionForm = ({ open, onClose }: CreateMaterialTransact
                   <FormItem>
                     <FormLabel>Reference Document</FormLabel>
                     <FormControl>
-                      <Input placeholder="PO-2024-001, WO-2024-001, etc." {...field} />
+                      <Input placeholder="PO-001, SO-001, etc." {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -257,7 +237,7 @@ const CreateMaterialTransactionForm = ({ open, onClose }: CreateMaterialTransact
                   <FormLabel>Notes</FormLabel>
                   <FormControl>
                     <Textarea 
-                      placeholder="Additional notes about this transaction..."
+                      placeholder="Additional notes..."
                       className="resize-none"
                       {...field}
                     />

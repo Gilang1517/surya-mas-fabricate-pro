@@ -1,17 +1,15 @@
 
 import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
 import { 
-  ArrowUpDown, 
   Search, 
   Filter, 
   Plus, 
   FileDown, 
-  FileUp,
+  ArrowUpDown,
   MoreHorizontal,
+  Eye,
   Pencil,
-  Trash2,
-  Eye
+  Trash2
 } from 'lucide-react';
 import { 
   Card,
@@ -37,14 +35,14 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
 import { useMachines, type Machine } from '@/hooks/useMachines';
-import { getStatusColor } from '@/utils/statusHelpers';
+import { getStatusColor, formatDate } from '@/utils/statusHelpers';
 import CreateMachineForm from '@/components/CreateMachineForm';
 
 const Machines = () => {
   const [searchTerm, setSearchTerm] = useState('');
-  const [sortBy, setSortBy] = useState<keyof Machine>('asset_number');
-  const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
-  const [showCreateForm, setShowCreateForm] = useState(false);
+  const [sortBy, setSortBy] = useState<keyof Machine>('created_at');
+  const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
+  const [showForm, setShowForm] = useState(false);
   const { toast } = useToast();
 
   const { data: machines = [], isLoading, error } = useMachines();
@@ -59,10 +57,10 @@ const Machines = () => {
   };
 
   const filteredMachines = machines.filter(machine =>
-    machine.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
     machine.asset_number.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    (machine.manufacturer?.toLowerCase().includes(searchTerm.toLowerCase()) ?? false) ||
-    (machine.location?.toLowerCase().includes(searchTerm.toLowerCase()) ?? false)
+    machine.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    (machine.manufacturer && machine.manufacturer.toLowerCase().includes(searchTerm.toLowerCase())) ||
+    (machine.location && machine.location.toLowerCase().includes(searchTerm.toLowerCase()))
   );
 
   const sortedMachines = [...filteredMachines].sort((a, b) => {
@@ -85,8 +83,8 @@ const Machines = () => {
     });
   };
 
-  const handleCreateMachine = () => {
-    setShowCreateForm(true);
+  const handleRegisterMachine = () => {
+    setShowForm(true);
   };
 
   if (error) {
@@ -104,16 +102,16 @@ const Machines = () => {
       <div className="flex justify-between items-center">
         <div>
           <h1 className="text-2xl font-bold">Machines</h1>
-          <p className="text-gray-500">Manage your machine inventory</p>
+          <p className="text-gray-500">Manage heavy equipment and machinery</p>
         </div>
-        <Button onClick={handleCreateMachine}>
+        <Button onClick={handleRegisterMachine}>
           <Plus className="mr-2 h-4 w-4" /> Register Machine
         </Button>
       </div>
 
       <Card>
         <CardHeader className="pb-3">
-          <CardTitle>Machines Inventory</CardTitle>
+          <CardTitle>Machine List</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-4 gap-4">
@@ -133,9 +131,6 @@ const Machines = () => {
               <Button variant="outline" size="sm">
                 <FileDown className="mr-2 h-4 w-4" /> Export
               </Button>
-              <Button variant="outline" size="sm">
-                <FileUp className="mr-2 h-4 w-4" /> Import
-              </Button>
             </div>
           </div>
 
@@ -143,18 +138,26 @@ const Machines = () => {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead className="w-[160px] cursor-pointer" onClick={() => handleSort('assetNumber')}>
+                  <TableHead className="w-[150px] cursor-pointer" onClick={() => handleSort('asset_number')}>
                     <div className="flex items-center">
-                      Asset #
-                      {sortBy === 'assetNumber' && (
+                      Asset Number
+                      {sortBy === 'asset_number' && (
                         <ArrowUpDown className="ml-2 h-3 w-3" />
                       )}
                     </div>
                   </TableHead>
                   <TableHead className="cursor-pointer" onClick={() => handleSort('name')}>
                     <div className="flex items-center">
-                      Name
+                      Machine Name
                       {sortBy === 'name' && (
+                        <ArrowUpDown className="ml-2 h-3 w-3" />
+                      )}
+                    </div>
+                  </TableHead>
+                  <TableHead className="cursor-pointer" onClick={() => handleSort('manufacturer')}>
+                    <div className="flex items-center">
+                      Manufacturer
+                      {sortBy === 'manufacturer' && (
                         <ArrowUpDown className="ml-2 h-3 w-3" />
                       )}
                     </div>
@@ -167,20 +170,18 @@ const Machines = () => {
                       )}
                     </div>
                   </TableHead>
-                  <TableHead className="hidden md:table-cell cursor-pointer" onClick={() => handleSort('manufacturer')}>
-                    <div className="flex items-center">
-                      Manufacturer
-                      {sortBy === 'manufacturer' && (
-                        <ArrowUpDown className="ml-2 h-3 w-3" />
-                      )}
-                    </div>
-                  </TableHead>
                   <TableHead className="text-center">Status</TableHead>
                   <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {sortedMachines.length === 0 ? (
+                {isLoading ? (
+                  <TableRow>
+                    <TableCell colSpan={6} className="h-24 text-center">
+                      Loading...
+                    </TableCell>
+                  </TableRow>
+                ) : sortedMachines.length === 0 ? (
                   <TableRow>
                     <TableCell colSpan={6} className="h-24 text-center">
                       No machines found
@@ -190,22 +191,23 @@ const Machines = () => {
                   sortedMachines.map((machine) => (
                     <TableRow key={machine.id}>
                       <TableCell className="font-medium">
-                        {machine.assetNumber}
+                        {machine.asset_number}
                       </TableCell>
                       <TableCell>
-                        <Link to={`/machines/${machine.id}`} className="hover:underline text-company-blue">
-                          {machine.name}
-                        </Link>
+                        <div>
+                          <div className="font-medium">{machine.name}</div>
+                          <div className="text-sm text-gray-500">{machine.model}</div>
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        {machine.manufacturer || '-'}
                       </TableCell>
                       <TableCell className="hidden md:table-cell">
-                        {machine.location}
-                      </TableCell>
-                      <TableCell className="hidden md:table-cell">
-                        {machine.manufacturer}
+                        {machine.location || '-'}
                       </TableCell>
                       <TableCell className="text-center">
-                        <span className={`px-2 py-1 rounded-full text-xs ${getStatusColor(machine.status)}`}>
-                          {machine.status}
+                        <span className={`px-2 py-1 rounded-full text-xs capitalize ${getStatusColor(machine.status || 'operational')}`}>
+                          {machine.status || 'operational'}
                         </span>
                       </TableCell>
                       <TableCell className="text-right">
@@ -218,9 +220,7 @@ const Machines = () => {
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end">
                             <DropdownMenuItem>
-                              <Link to={`/machines/${machine.id}`} className="flex items-center w-full">
-                                <Eye className="mr-2 h-4 w-4" /> View
-                              </Link>
+                              <Eye className="mr-2 h-4 w-4" /> View Details
                             </DropdownMenuItem>
                             <DropdownMenuItem>
                               <Pencil className="mr-2 h-4 w-4" /> Edit
@@ -243,17 +243,14 @@ const Machines = () => {
               Showing <span className="font-medium">{sortedMachines.length}</span> of{" "}
               <span className="font-medium">{machines.length}</span> machines
             </div>
-            {/* Add pagination here in the future */}
           </div>
         </CardContent>
       </Card>
 
-      {showCreateForm && (
-        <CreateMachineForm 
-          open={showCreateForm}
-          onClose={() => setShowCreateForm(false)}
-        />
-      )}
+      <CreateMachineForm 
+        open={showForm}
+        onClose={() => setShowForm(false)}
+      />
     </div>
   );
 };

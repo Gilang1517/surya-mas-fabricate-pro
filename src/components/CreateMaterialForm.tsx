@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -70,7 +69,16 @@ const CreateMaterialForm = ({ open, onClose }: CreateMaterialFormProps) => {
   const handleSubmit = async (data: MaterialFormData) => {
     try {
       await createMaterial.mutateAsync({
-        ...data,
+        material_number: data.material_number,
+        name: data.name,
+        description: data.description || '',
+        type: data.type || '',
+        category: data.category || '',
+        unit: data.unit,
+        price: data.price || 0,
+        stock: data.stock || 0,
+        minimum_stock: data.minimum_stock || 0,
+        supplier: data.supplier || '',
         status: 'active',
       });
       toast({
