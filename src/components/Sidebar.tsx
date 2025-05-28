@@ -10,7 +10,9 @@ import {
   Settings,
   MenuIcon,
   X,
-  ArrowRightLeft
+  ArrowRightLeft,
+  Clock,
+  Wrench
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useIsMobile } from '@/hooks/use-mobile';
@@ -132,6 +134,51 @@ const Sidebar = () => {
           >
             <Computer className="h-5 w-5" />
             <span>Machines</span>
+          </NavLink>
+
+          <NavLink 
+            to="/machine-borrow" 
+            onClick={() => isMobile && setExpanded(false)}
+            className={({ isActive }) =>
+              `flex items-center gap-3 px-3 py-2 rounded-md transition-colors ${
+                isActive 
+                  ? 'bg-company-blue text-white' 
+                  : 'text-gray-700 hover:bg-gray-100'
+              }`
+            }
+          >
+            <Clock className="h-5 w-5" />
+            <span>Machine Borrow</span>
+          </NavLink>
+
+          <NavLink 
+            to="/machine-service" 
+            onClick={() => isMobile && setExpanded(false)}
+            className={({ isActive }) =>
+              `flex items-center gap-3 px-3 py-2 rounded-md transition-colors ${
+                isActive 
+                  ? 'bg-company-blue text-white' 
+                  : 'text-gray-700 hover:bg-gray-100'
+              }`
+            }
+          >
+            <Wrench className="h-5 w-5" />
+            <span>Machine Service</span>
+          </NavLink>
+          
+          <NavLink 
+            to="/machine-transactions" 
+            onClick={() => isMobile && setExpanded(false)}
+            className={({ isActive }) =>
+              `flex items-center gap-3 px-3 py-2 rounded-md transition-colors ${
+                isActive 
+                  ? 'bg-company-blue text-white' 
+                  : 'text-gray-700 hover:bg-gray-100'
+              }`
+            }
+          >
+            <ArrowRightLeft className="h-5 w-5" />
+            <span>Machine Transactions</span>
           </NavLink>
           
           <NavLink 

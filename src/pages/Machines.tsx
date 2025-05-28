@@ -35,14 +35,19 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { machines, Machine, getStatusColor } from '@/data/mockData';
-import { useToast } from '@/components/ui/use-toast';
+import { useToast } from '@/hooks/use-toast';
+import { useMachines, type Machine } from '@/hooks/useMachines';
+import { getStatusColor } from '@/utils/statusHelpers';
+import CreateMachineForm from '@/components/CreateMachineForm';
 
 const Machines = () => {
   const [searchTerm, setSearchTerm] = useState('');
-  const [sortBy, setSortBy] = useState<keyof Machine>('assetNumber');
+  const [sortBy, setSortBy] = useState<keyof Machine>('asset_number');
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
+  const [showCreateForm, setShowCreateForm] = useState(false);
   const { toast } = useToast();
+
+  const { data: machines = [], isLoading, error } = useMachines();
 
   const handleSort = (column: keyof Machine) => {
     if (sortBy === column) {
@@ -55,14 +60,21 @@ const Machines = () => {
 
   const filteredMachines = machines.filter(machine =>
     machine.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    machine.assetNumber.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    machine.manufacturer.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    machine.location.toLowerCase().includes(searchTerm.toLowerCase())
+    machine.asset_number.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    (machine.manufacturer?.toLowerCase().includes(searchTerm.toLowerCase()) ?? false) ||
+    (machine.location?.toLowerCase().includes(searchTerm.toLowerCase()) ?? false)
   );
 
   const sortedMachines = [...filteredMachines].sort((a, b) => {
-    if (a[sortBy] < b[sortBy]) return sortDirection === 'asc' ? -1 : 1;
-    if (a[sortBy] > b[sortBy]) return sortDirection === 'asc' ? 1 : -1;
+    const aValue = a[sortBy];
+    const bValue = b[sortBy];
+    
+    if (aValue == null && bValue == null) return 0;
+    if (aValue == null) return sortDirection === 'asc' ? 1 : -1;
+    if (bValue == null) return sortDirection === 'asc' ? -1 : 1;
+    
+    if (aValue < bValue) return sortDirection === 'asc' ? -1 : 1;
+    if (aValue > bValue) return sortDirection === 'asc' ? 1 : -1;
     return 0;
   });
 
@@ -74,11 +86,18 @@ const Machines = () => {
   };
 
   const handleCreateMachine = () => {
-    toast({
-      title: "Create machine",
-      description: "This functionality would open a form to create a new machine.",
-    });
+    setShowCreateForm(true);
   };
+
+  if (error) {
+    return (
+      <div className="space-y-6">
+        <div className="text-center text-red-600">
+          Error loading machines: {error.message}
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -228,6 +247,13 @@ const Machines = () => {
           </div>
         </CardContent>
       </Card>
+
+      {showCreateForm && (
+        <CreateMachineForm 
+          open={showCreateForm}
+          onClose={() => setShowCreateForm(false)}
+        />
+      )}
     </div>
   );
 };

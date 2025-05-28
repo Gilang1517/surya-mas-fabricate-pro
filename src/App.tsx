@@ -12,6 +12,8 @@ import MaterialDetails from "./pages/MaterialDetails";
 import Machines from "./pages/Machines";
 import MachineDetails from "./pages/MachineDetails";
 import MachineTransactions from "./pages/MachineTransactions";
+import MachineBorrow from "./pages/MachineBorrow";
+import MachineService from "./pages/MachineService";
 import Transactions from "./pages/Transactions";
 import Inventory from "./pages/Inventory";
 import Reports from "./pages/Reports";
@@ -35,6 +37,8 @@ const App = () => (
             <Route path="/machines" element={<Machines />} />
             <Route path="/machines/:id" element={<MachineDetails />} />
             <Route path="/machine-transactions" element={<MachineTransactions />} />
+            <Route path="/machine-borrow" element={<MachineBorrow />} />
+            <Route path="/machine-service" element={<MachineService />} />
             <Route path="/inventory" element={<Inventory />} />
             <Route path="/reports" element={<Reports />} />
             <Route path="*" element={<NotFound />} />

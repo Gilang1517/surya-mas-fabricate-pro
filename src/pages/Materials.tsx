@@ -39,11 +39,13 @@ import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
 import { useMaterials, useDeleteMaterial, type Material } from '@/hooks/useMaterials';
 import { getStatusColor, formatCurrency } from '@/utils/statusHelpers';
+import CreateMaterialForm from '@/components/CreateMaterialForm';
 
 const Materials = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [sortBy, setSortBy] = useState<keyof Material>('material_number');
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
+  const [showCreateForm, setShowCreateForm] = useState(false);
   const { toast } = useToast();
 
   const { data: materials = [], isLoading, error } = useMaterials();
@@ -94,10 +96,7 @@ const Materials = () => {
   };
 
   const handleCreateMaterial = () => {
-    toast({
-      title: "Create material",
-      description: "Fitur create material akan segera ditambahkan.",
-    });
+    setShowCreateForm(true);
   };
 
   if (error) {
@@ -271,6 +270,13 @@ const Materials = () => {
           </div>
         </CardContent>
       </Card>
+
+      {showCreateForm && (
+        <CreateMaterialForm 
+          open={showCreateForm}
+          onClose={() => setShowCreateForm(false)}
+        />
+      )}
     </div>
   );
 };

@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { 
   Search, 
@@ -33,16 +32,19 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { materialTransactions, MaterialTransaction, getTransactionTypeColor, getStatusColor } from '@/data/transactionData';
 import { useToast } from '@/hooks/use-toast';
-import TransactionForm from '@/components/TransactionForm';
+import { useMaterialTransactions, type MaterialTransaction } from '@/hooks/useMaterialTransactions';
+import { getStatusColor, formatDate } from '@/utils/statusHelpers';
+import CreateMaterialTransactionForm from '@/components/CreateMaterialTransactionForm';
 
 const Transactions = () => {
   const [searchTerm, setSearchTerm] = useState('');
-  const [sortBy, setSortBy] = useState<keyof MaterialTransaction>('date');
+  const [sortBy, setSortBy] = useState<keyof MaterialTransaction>('created_at');
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
   const [showForm, setShowForm] = useState(false);
   const { toast } = useToast();
+
+  const { data: transactions = [], isLoading, error } = useMaterialTransactions();
 
   const handleSort = (column: keyof MaterialTransaction) => {
     if (sortBy === column) {
@@ -53,16 +55,22 @@ const Transactions = () => {
     }
   };
 
-  const filteredTransactions = materialTransactions.filter(transaction =>
-    transaction.transactionNumber.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    transaction.materialNumber.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    transaction.materialName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    transaction.transactionType.toLowerCase().includes(searchTerm.toLowerCase())
+  const filteredTransactions = transactions.filter(transaction =>
+    transaction.transaction_number.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    transaction.transaction_type.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    (transaction.materials?.name?.toLowerCase().includes(searchTerm.toLowerCase()) ?? false)
   );
 
   const sortedTransactions = [...filteredTransactions].sort((a, b) => {
-    if (a[sortBy] < b[sortBy]) return sortDirection === 'asc' ? -1 : 1;
-    if (a[sortBy] > b[sortBy]) return sortDirection === 'asc' ? 1 : -1;
+    const aValue = a[sortBy];
+    const bValue = b[sortBy];
+    
+    if (aValue == null && bValue == null) return 0;
+    if (aValue == null) return sortDirection === 'asc' ? 1 : -1;
+    if (bValue == null) return sortDirection === 'asc' ? -1 : 1;
+    
+    if (aValue < bValue) return sortDirection === 'asc' ? -1 : 1;
+    if (aValue > bValue) return sortDirection === 'asc' ? 1 : -1;
     return 0;
   });
 
@@ -76,6 +84,26 @@ const Transactions = () => {
   const handleCreateTransaction = () => {
     setShowForm(true);
   };
+
+  const getTransactionTypeColor = (type: string) => {
+    switch (type.toLowerCase()) {
+      case 'inbound': return 'bg-green-100 text-green-800';
+      case 'outbound': return 'bg-red-100 text-red-800';
+      case 'transfer': return 'bg-blue-100 text-blue-800';
+      case 'adjustment': return 'bg-yellow-100 text-yellow-800';
+      default: return 'bg-gray-100 text-gray-800';
+    }
+  };
+
+  if (error) {
+    return (
+      <div className="space-y-6">
+        <div className="text-center text-red-600">
+          Error loading transactions: {error.message}
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -173,27 +201,27 @@ const Transactions = () => {
                   sortedTransactions.map((transaction) => (
                     <TableRow key={transaction.id}>
                       <TableCell className="font-medium">
-                        {transaction.transactionNumber}
+                        {transaction.transaction_number}
                       </TableCell>
                       <TableCell>
                         <div>
-                          <div className="font-medium">{transaction.materialNumber}</div>
-                          <div className="text-sm text-gray-500">{transaction.materialName}</div>
+                          <div className="font-medium">{transaction.material_number}</div>
+                          <div className="text-sm text-gray-500">{transaction.material_name}</div>
                         </div>
                       </TableCell>
                       <TableCell className="text-center">
-                        <span className={`px-2 py-1 rounded-full text-xs capitalize ${getTransactionTypeColor(transaction.transactionType)}`}>
-                          {transaction.transactionType}
+                        <span className={`px-2 py-1 rounded-full text-xs capitalize ${getTransactionTypeColor(transaction.transaction_type)}`}>
+                          {transaction.transaction_type}
                         </span>
                       </TableCell>
                       <TableCell className="text-right">
                         <div className="font-medium">
                           {transaction.quantity > 0 ? '+' : ''}{transaction.quantity} {transaction.unit}
                         </div>
-                        <div className="text-xs text-gray-500">MT: {transaction.movementType}</div>
+                        <div className="text-xs text-gray-500">MT: {transaction.movement_type}</div>
                       </TableCell>
                       <TableCell className="hidden md:table-cell">
-                        <div>{transaction.date}</div>
+                        <div>{formatDate(transaction.created_at)}</div>
                         <div className="text-xs text-gray-500">{transaction.time}</div>
                       </TableCell>
                       <TableCell className="text-center">
@@ -232,23 +260,16 @@ const Transactions = () => {
           <div className="flex items-center justify-end space-x-2 py-4">
             <div className="text-sm text-gray-500">
               Showing <span className="font-medium">{sortedTransactions.length}</span> of{" "}
-              <span className="font-medium">{materialTransactions.length}</span> transactions
+              <span className="font-medium">{transactions.length}</span> transactions
             </div>
           </div>
         </CardContent>
       </Card>
 
       {showForm && (
-        <TransactionForm 
+        <CreateMaterialTransactionForm 
+          open={showForm}
           onClose={() => setShowForm(false)}
-          onSubmit={(data) => {
-            console.log('Transaction data:', data);
-            toast({
-              title: "Transaction created",
-              description: "This is a demo - no actual creation occurred.",
-            });
-            setShowForm(false);
-          }}
         />
       )}
     </div>
