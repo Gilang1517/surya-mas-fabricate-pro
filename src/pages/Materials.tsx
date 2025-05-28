@@ -11,7 +11,8 @@ import {
   MoreHorizontal,
   Pencil,
   Trash2,
-  Eye
+  Eye,
+  Loader2
 } from 'lucide-react';
 import { 
   Card,
@@ -35,14 +36,18 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { materials, Material, getStatusColor } from '@/data/mockData';
-import { useToast } from '@/components/ui/use-toast';
+import { useToast } from '@/hooks/use-toast';
+import { useMaterials, useDeleteMaterial, type Material } from '@/hooks/useMaterials';
+import { getStatusColor, formatCurrency } from '@/utils/statusHelpers';
 
 const Materials = () => {
   const [searchTerm, setSearchTerm] = useState('');
-  const [sortBy, setSortBy] = useState<keyof Material>('materialNumber');
+  const [sortBy, setSortBy] = useState<keyof Material>('material_number');
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
   const { toast } = useToast();
+
+  const { data: materials = [], isLoading, error } = useMaterials();
+  const deleteMaterial = useDeleteMaterial();
 
   const handleSort = (column: keyof Material) => {
     if (sortBy === column) {
@@ -55,36 +60,62 @@ const Materials = () => {
 
   const filteredMaterials = materials.filter(material =>
     material.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    material.materialNumber.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    material.category.toLowerCase().includes(searchTerm.toLowerCase())
+    material.material_number.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    (material.category?.toLowerCase().includes(searchTerm.toLowerCase()) ?? false)
   );
 
   const sortedMaterials = [...filteredMaterials].sort((a, b) => {
-    if (a[sortBy] < b[sortBy]) return sortDirection === 'asc' ? -1 : 1;
-    if (a[sortBy] > b[sortBy]) return sortDirection === 'asc' ? 1 : -1;
+    const aValue = a[sortBy];
+    const bValue = b[sortBy];
+    
+    if (aValue == null && bValue == null) return 0;
+    if (aValue == null) return sortDirection === 'asc' ? 1 : -1;
+    if (bValue == null) return sortDirection === 'asc' ? -1 : 1;
+    
+    if (aValue < bValue) return sortDirection === 'asc' ? -1 : 1;
+    if (aValue > bValue) return sortDirection === 'asc' ? 1 : -1;
     return 0;
   });
 
-  const handleDelete = (id: string) => {
-    toast({
-      title: "Material deleted",
-      description: "This is a demo - no actual deletion occurred.",
-    });
+  const handleDelete = async (id: string) => {
+    try {
+      await deleteMaterial.mutateAsync(id);
+      toast({
+        title: "Material berhasil dihapus",
+        description: "Data material telah dihapus dari database.",
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Gagal menghapus material. Silakan coba lagi.",
+        variant: "destructive",
+      });
+    }
   };
 
   const handleCreateMaterial = () => {
     toast({
       title: "Create material",
-      description: "This functionality would open a form to create a new material.",
+      description: "Fitur create material akan segera ditambahkan.",
     });
   };
+
+  if (error) {
+    return (
+      <div className="space-y-6">
+        <div className="text-center text-red-600">
+          Error loading materials: {error.message}
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <div>
           <h1 className="text-2xl font-bold">Materials</h1>
-          <p className="text-gray-500">Manage your materials inventory</p>
+          <p className="text-gray-500">Kelola inventaris material perusahaan</p>
         </div>
         <Button onClick={handleCreateMaterial}>
           <Plus className="mr-2 h-4 w-4" /> Create Material
@@ -123,10 +154,10 @@ const Materials = () => {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead className="w-[180px] cursor-pointer" onClick={() => handleSort('materialNumber')}>
+                  <TableHead className="w-[180px] cursor-pointer" onClick={() => handleSort('material_number')}>
                     <div className="flex items-center">
                       Material #
-                      {sortBy === 'materialNumber' && (
+                      {sortBy === 'material_number' && (
                         <ArrowUpDown className="ml-2 h-3 w-3" />
                       )}
                     </div>
@@ -155,14 +186,22 @@ const Materials = () => {
                       )}
                     </div>
                   </TableHead>
+                  <TableHead className="hidden md:table-cell text-right">Price</TableHead>
                   <TableHead className="text-center">Status</TableHead>
                   <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {sortedMaterials.length === 0 ? (
+                {isLoading ? (
                   <TableRow>
-                    <TableCell colSpan={6} className="h-24 text-center">
+                    <TableCell colSpan={7} className="h-24 text-center">
+                      <Loader2 className="h-6 w-6 animate-spin mx-auto" />
+                      <p className="mt-2">Loading materials...</p>
+                    </TableCell>
+                  </TableRow>
+                ) : sortedMaterials.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={7} className="h-24 text-center">
                       No materials found
                     </TableCell>
                   </TableRow>
@@ -170,7 +209,7 @@ const Materials = () => {
                   sortedMaterials.map((material) => (
                     <TableRow key={material.id}>
                       <TableCell className="font-medium">
-                        {material.materialNumber}
+                        {material.material_number}
                       </TableCell>
                       <TableCell>
                         <Link to={`/materials/${material.id}`} className="hover:underline text-company-blue">
@@ -178,14 +217,17 @@ const Materials = () => {
                         </Link>
                       </TableCell>
                       <TableCell className="hidden md:table-cell">
-                        {material.category}
+                        {material.category || '-'}
                       </TableCell>
                       <TableCell className="hidden md:table-cell text-right">
                         {material.stock} {material.unit}
                       </TableCell>
+                      <TableCell className="hidden md:table-cell text-right">
+                        {material.price ? formatCurrency(material.price) : '-'}
+                      </TableCell>
                       <TableCell className="text-center">
-                        <span className={`px-2 py-1 rounded-full text-xs ${getStatusColor(material.status)}`}>
-                          {material.status}
+                        <span className={`px-2 py-1 rounded-full text-xs ${getStatusColor(material.status || 'active')}`}>
+                          {material.status || 'active'}
                         </span>
                       </TableCell>
                       <TableCell className="text-right">
@@ -205,7 +247,10 @@ const Materials = () => {
                             <DropdownMenuItem>
                               <Pencil className="mr-2 h-4 w-4" /> Edit
                             </DropdownMenuItem>
-                            <DropdownMenuItem onClick={() => handleDelete(material.id)}>
+                            <DropdownMenuItem 
+                              onClick={() => handleDelete(material.id)}
+                              disabled={deleteMaterial.isPending}
+                            >
                               <Trash2 className="mr-2 h-4 w-4" /> Delete
                             </DropdownMenuItem>
                           </DropdownMenuContent>
@@ -223,7 +268,6 @@ const Materials = () => {
               Showing <span className="font-medium">{sortedMaterials.length}</span> of{" "}
               <span className="font-medium">{materials.length}</span> materials
             </div>
-            {/* Add pagination here in the future */}
           </div>
         </CardContent>
       </Card>

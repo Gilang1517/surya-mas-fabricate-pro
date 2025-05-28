@@ -11,84 +11,103 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { Plus, Eye, Edit } from 'lucide-react';
+import { Plus, Eye, Edit, Loader2 } from 'lucide-react';
 import QuickActionButtons from '@/components/QuickActionButtons';
 import MachineTransactionForm from '@/components/MachineTransactionForm';
-import { 
-  machineTransactions,
-  getTransactionTypeColor,
-  getTransactionTypeLabel,
-  getMachineStatusColor,
-  getDamageLevelColor,
-  type MachineTransaction 
-} from '@/data/machineTransactionData';
+import { useMachineTransactions, useCreateMachineTransaction } from '@/hooks/useMachineTransactions';
+import { useMachines } from '@/hooks/useMachines';
+import { useToast } from '@/hooks/use-toast';
+import { formatCurrency, formatDate, getStatusColor } from '@/utils/statusHelpers';
 
 const MachineTransactions = () => {
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [selectedTransactionType, setSelectedTransactionType] = useState<string>('');
-  const [transactions, setTransactions] = useState<MachineTransaction[]>(machineTransactions);
+  const { toast } = useToast();
+
+  const { data: transactions = [], isLoading: transactionsLoading } = useMachineTransactions();
+  const { data: machines = [] } = useMachines();
+  const createTransaction = useCreateMachineTransaction();
 
   const handleQuickAction = (type: string) => {
     setSelectedTransactionType(type);
     setIsFormOpen(true);
   };
 
-  const handleFormSubmit = (data: any) => {
-    const newTransaction: MachineTransaction = {
-      id: String(transactions.length + 1),
-      transactionNumber: `MT-2024-${String(transactions.length + 1).padStart(3, '0')}`,
-      machineId: data.machineId,
-      machineNumber: getMachineNumber(data.machineId),
-      machineName: getMachineName(data.machineId),
-      transactionType: data.transactionType,
-      status: data.transactionType === 'damage_report' ? 'pending' : 'active',
-      startDate: data.startDate,
-      endDate: data.endDate,
-      borrower: data.borrower,
-      borrowerDepartment: data.borrowerDepartment,
-      siteLocation: data.siteLocation,
-      serviceType: data.serviceType,
-      serviceProvider: data.serviceProvider,
-      damageDescription: data.damageDescription,
-      damageLevel: data.damageLevel || 'low',
-      repairCost: data.repairCost,
-      notes: data.notes,
-      createdBy: 'Current User',
-      createdDate: new Date().toISOString().split('T')[0],
-    };
+  const handleFormSubmit = async (data: any) => {
+    try {
+      await createTransaction.mutateAsync({
+        transaction_number: `MT-${Date.now()}`,
+        machine_id: data.machineId,
+        transaction_type: data.transactionType,
+        start_date: data.startDate,
+        end_date: data.endDate,
+        borrower: data.borrower,
+        borrower_department: data.borrowerDepartment,
+        site_location: data.siteLocation,
+        service_type: data.serviceType,
+        service_provider: data.serviceProvider,
+        damage_description: data.damageDescription,
+        damage_level: data.damageLevel,
+        repair_cost: data.repairCost,
+        notes: data.notes,
+        created_by: 'Current User',
+      });
 
-    setTransactions([newTransaction, ...transactions]);
-    setIsFormOpen(false);
-    setSelectedTransactionType('');
+      toast({
+        title: "Transaksi berhasil dibuat",
+        description: "Data transaksi mesin telah disimpan ke database.",
+      });
+
+      setIsFormOpen(false);
+      setSelectedTransactionType('');
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Gagal membuat transaksi. Silakan coba lagi.",
+        variant: "destructive",
+      });
+    }
   };
 
-  const getMachineNumber = (machineId: string) => {
-    const machines = {
-      '1': 'EXC-001',
-      '2': 'BLD-001',
-      '3': 'CRN-001',
-      '4': 'GDR-001',
-    };
-    return machines[machineId as keyof typeof machines] || 'Unknown';
+  const getTransactionTypeLabel = (type: string) => {
+    switch (type) {
+      case 'local_borrow': return 'Peminjaman Lokal';
+      case 'site_borrow': return 'Peminjaman Site';
+      case 'service': return 'Service';
+      case 'damage_report': return 'Laporan Kerusakan';
+      default: return type;
+    }
   };
 
-  const getMachineName = (machineId: string) => {
-    const machines = {
-      '1': 'Excavator CAT 320D',
-      '2': 'Bulldozer D6T',
-      '3': 'Mobile Crane 25T',
-      '4': 'Motor Grader 140M',
-    };
-    return machines[machineId as keyof typeof machines] || 'Unknown Machine';
+  const getTransactionTypeColor = (type: string) => {
+    switch (type) {
+      case 'local_borrow': return 'bg-blue-100 text-blue-800';
+      case 'site_borrow': return 'bg-purple-100 text-purple-800';
+      case 'service': return 'bg-orange-100 text-orange-800';
+      case 'damage_report': return 'bg-red-100 text-red-800';
+      default: return 'bg-gray-100 text-gray-800';
+    }
   };
 
-  const formatCurrency = (amount?: number) => {
-    if (!amount) return '-';
-    return new Intl.NumberFormat('id-ID', {
-      style: 'currency',
-      currency: 'IDR',
-      minimumFractionDigits: 0,
-    }).format(amount);
+  const getDamageLevelColor = (level?: string) => {
+    if (!level) return 'bg-gray-100 text-gray-800';
+    switch (level) {
+      case 'low': return 'bg-green-100 text-green-800';
+      case 'medium': return 'bg-yellow-100 text-yellow-800';
+      case 'high': return 'bg-orange-100 text-orange-800';
+      case 'critical': return 'bg-red-100 text-red-800';
+      default: return 'bg-gray-100 text-gray-800';
+    }
+  };
+
+  const getStatusLabel = (status: string) => {
+    switch (status) {
+      case 'active': return 'Aktif';
+      case 'completed': return 'Selesai';
+      case 'pending': return 'Pending';
+      case 'cancelled': return 'Dibatalkan';
+      default: return status;
+    }
   };
 
   return (
@@ -134,65 +153,80 @@ const MachineTransactions = () => {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {transactions.map((transaction) => (
-                  <TableRow key={transaction.id}>
-                    <TableCell className="font-medium">
-                      {transaction.transactionNumber}
-                    </TableCell>
-                    <TableCell>
-                      <div>
-                        <div className="font-medium">{transaction.machineNumber}</div>
-                        <div className="text-sm text-gray-500">{transaction.machineName}</div>
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <Badge className={getTransactionTypeColor(transaction.transactionType)}>
-                        {getTransactionTypeLabel(transaction.transactionType)}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>
-                      <Badge className={getMachineStatusColor(transaction.status)}>
-                        {transaction.status === 'active' ? 'Aktif' :
-                         transaction.status === 'completed' ? 'Selesai' :
-                         transaction.status === 'pending' ? 'Pending' : 'Dibatalkan'}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>
-                      <div>
-                        <div>{transaction.startDate}</div>
-                        {transaction.endDate && (
-                          <div className="text-sm text-gray-500">s/d {transaction.endDate}</div>
-                        )}
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      {transaction.borrower || transaction.serviceProvider || transaction.createdBy}
-                      {transaction.borrowerDepartment && (
-                        <div className="text-sm text-gray-500">{transaction.borrowerDepartment}</div>
-                      )}
-                    </TableCell>
-                    <TableCell>
-                      {formatCurrency(transaction.repairCost)}
-                    </TableCell>
-                    <TableCell>
-                      <Badge className={getDamageLevelColor(transaction.damageLevel)}>
-                        {transaction.damageLevel === 'low' ? 'Rendah' :
-                         transaction.damageLevel === 'medium' ? 'Sedang' :
-                         transaction.damageLevel === 'high' ? 'Tinggi' : 'Kritis'}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex gap-2">
-                        <Button variant="outline" size="sm">
-                          <Eye className="h-4 w-4" />
-                        </Button>
-                        <Button variant="outline" size="sm">
-                          <Edit className="h-4 w-4" />
-                        </Button>
-                      </div>
+                {transactionsLoading ? (
+                  <TableRow>
+                    <TableCell colSpan={9} className="h-24 text-center">
+                      <Loader2 className="h-6 w-6 animate-spin mx-auto" />
+                      <p className="mt-2">Loading transactions...</p>
                     </TableCell>
                   </TableRow>
-                ))}
+                ) : transactions.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={9} className="h-24 text-center">
+                      No transactions found
+                    </TableCell>
+                  </TableRow>
+                ) : (
+                  transactions.map((transaction) => (
+                    <TableRow key={transaction.id}>
+                      <TableCell className="font-medium">
+                        {transaction.transaction_number}
+                      </TableCell>
+                      <TableCell>
+                        <div>
+                          <div className="font-medium">{transaction.machines?.asset_number}</div>
+                          <div className="text-sm text-gray-500">{transaction.machines?.name}</div>
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <Badge className={getTransactionTypeColor(transaction.transaction_type)}>
+                          {getTransactionTypeLabel(transaction.transaction_type)}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>
+                        <Badge className={getStatusColor(transaction.status || 'pending')}>
+                          {getStatusLabel(transaction.status || 'pending')}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>
+                        <div>
+                          <div>{formatDate(transaction.start_date)}</div>
+                          {transaction.end_date && (
+                            <div className="text-sm text-gray-500">s/d {formatDate(transaction.end_date)}</div>
+                          )}
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        {transaction.borrower || transaction.service_provider || transaction.created_by}
+                        {transaction.borrower_department && (
+                          <div className="text-sm text-gray-500">{transaction.borrower_department}</div>
+                        )}
+                      </TableCell>
+                      <TableCell>
+                        {transaction.repair_cost ? formatCurrency(transaction.repair_cost) : '-'}
+                      </TableCell>
+                      <TableCell>
+                        {transaction.damage_level ? (
+                          <Badge className={getDamageLevelColor(transaction.damage_level)}>
+                            {transaction.damage_level === 'low' ? 'Rendah' :
+                             transaction.damage_level === 'medium' ? 'Sedang' :
+                             transaction.damage_level === 'high' ? 'Tinggi' : 'Kritis'}
+                          </Badge>
+                        ) : '-'}
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex gap-2">
+                          <Button variant="outline" size="sm">
+                            <Eye className="h-4 w-4" />
+                          </Button>
+                          <Button variant="outline" size="sm">
+                            <Edit className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))
+                )}
               </TableBody>
             </Table>
           </div>

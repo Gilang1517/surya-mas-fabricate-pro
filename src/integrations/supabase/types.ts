@@ -9,7 +9,238 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
-      [_ in never]: never
+      machine_transactions: {
+        Row: {
+          borrower: string | null
+          borrower_department: string | null
+          created_at: string
+          created_by: string
+          damage_description: string | null
+          damage_level: string | null
+          end_date: string | null
+          id: string
+          machine_id: string
+          notes: string | null
+          repair_cost: number | null
+          service_provider: string | null
+          service_type: string | null
+          site_location: string | null
+          start_date: string
+          status: string | null
+          transaction_number: string
+          transaction_type: string
+          updated_at: string
+        }
+        Insert: {
+          borrower?: string | null
+          borrower_department?: string | null
+          created_at?: string
+          created_by: string
+          damage_description?: string | null
+          damage_level?: string | null
+          end_date?: string | null
+          id?: string
+          machine_id: string
+          notes?: string | null
+          repair_cost?: number | null
+          service_provider?: string | null
+          service_type?: string | null
+          site_location?: string | null
+          start_date: string
+          status?: string | null
+          transaction_number: string
+          transaction_type: string
+          updated_at?: string
+        }
+        Update: {
+          borrower?: string | null
+          borrower_department?: string | null
+          created_at?: string
+          created_by?: string
+          damage_description?: string | null
+          damage_level?: string | null
+          end_date?: string | null
+          id?: string
+          machine_id?: string
+          notes?: string | null
+          repair_cost?: number | null
+          service_provider?: string | null
+          service_type?: string | null
+          site_location?: string | null
+          start_date?: string
+          status?: string | null
+          transaction_number?: string
+          transaction_type?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "machine_transactions_machine_id_fkey"
+            columns: ["machine_id"]
+            isOneToOne: false
+            referencedRelation: "machines"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      machines: {
+        Row: {
+          asset_number: string
+          created_at: string
+          description: string | null
+          id: string
+          location: string | null
+          manufacturer: string | null
+          model: string | null
+          name: string
+          purchase_date: string | null
+          purchase_price: number | null
+          serial_number: string | null
+          status: string | null
+          updated_at: string
+        }
+        Insert: {
+          asset_number: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          location?: string | null
+          manufacturer?: string | null
+          model?: string | null
+          name: string
+          purchase_date?: string | null
+          purchase_price?: number | null
+          serial_number?: string | null
+          status?: string | null
+          updated_at?: string
+        }
+        Update: {
+          asset_number?: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          location?: string | null
+          manufacturer?: string | null
+          model?: string | null
+          name?: string
+          purchase_date?: string | null
+          purchase_price?: number | null
+          serial_number?: string | null
+          status?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      material_transactions: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          id: string
+          material_id: string
+          movement_type: string
+          notes: string | null
+          quantity: number
+          reference_document: string | null
+          status: string | null
+          transaction_date: string
+          transaction_number: string
+          transaction_type: string
+          unit: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          material_id: string
+          movement_type: string
+          notes?: string | null
+          quantity: number
+          reference_document?: string | null
+          status?: string | null
+          transaction_date?: string
+          transaction_number: string
+          transaction_type: string
+          unit: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          material_id?: string
+          movement_type?: string
+          notes?: string | null
+          quantity?: number
+          reference_document?: string | null
+          status?: string | null
+          transaction_date?: string
+          transaction_number?: string
+          transaction_type?: string
+          unit?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "material_transactions_material_id_fkey"
+            columns: ["material_id"]
+            isOneToOne: false
+            referencedRelation: "materials"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      materials: {
+        Row: {
+          category: string | null
+          created_at: string
+          description: string | null
+          id: string
+          material_number: string
+          minimum_stock: number | null
+          name: string
+          price: number | null
+          status: string | null
+          stock: number | null
+          supplier: string | null
+          type: string | null
+          unit: string
+          updated_at: string
+        }
+        Insert: {
+          category?: string | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          material_number: string
+          minimum_stock?: number | null
+          name: string
+          price?: number | null
+          status?: string | null
+          stock?: number | null
+          supplier?: string | null
+          type?: string | null
+          unit: string
+          updated_at?: string
+        }
+        Update: {
+          category?: string | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          material_number?: string
+          minimum_stock?: number | null
+          name?: string
+          price?: number | null
+          status?: string | null
+          stock?: number | null
+          supplier?: string | null
+          type?: string | null
+          unit?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
