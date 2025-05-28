@@ -134,15 +134,35 @@ const Sidebar = () => {
             <span>Machines</span>
           </NavLink>
           
-          <div className="flex items-center gap-3 px-3 py-2 rounded-md text-gray-400 cursor-not-allowed">
+          <NavLink 
+            to="/inventory" 
+            onClick={() => isMobile && setExpanded(false)}
+            className={({ isActive }) =>
+              `flex items-center gap-3 px-3 py-2 rounded-md transition-colors ${
+                isActive 
+                  ? 'bg-company-blue text-white' 
+                  : 'text-gray-700 hover:bg-gray-100'
+              }`
+            }
+          >
             <Layers className="h-5 w-5" />
             <span>Inventory</span>
-          </div>
+          </NavLink>
           
-          <div className="flex items-center gap-3 px-3 py-2 rounded-md text-gray-400 cursor-not-allowed">
+          <NavLink 
+            to="/reports" 
+            onClick={() => isMobile && setExpanded(false)}
+            className={({ isActive }) =>
+              `flex items-center gap-3 px-3 py-2 rounded-md transition-colors ${
+                isActive 
+                  ? 'bg-company-blue text-white' 
+                  : 'text-gray-700 hover:bg-gray-100'
+              }`
+            }
+          >
             <BarChart3 className="h-5 w-5" />
             <span>Reports</span>
-          </div>
+          </NavLink>
         </nav>
         
         <div className="p-4 border-t border-gray-200">

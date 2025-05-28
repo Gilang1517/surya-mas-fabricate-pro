@@ -13,6 +13,8 @@ import Machines from "./pages/Machines";
 import MachineDetails from "./pages/MachineDetails";
 import MachineTransactions from "./pages/MachineTransactions";
 import Transactions from "./pages/Transactions";
+import Inventory from "./pages/Inventory";
+import Reports from "./pages/Reports";
 import NotFound from "./pages/NotFound";
 import Layout from "./components/Layout";
 
@@ -33,6 +35,8 @@ const App = () => (
             <Route path="/machines" element={<Machines />} />
             <Route path="/machines/:id" element={<MachineDetails />} />
             <Route path="/machine-transactions" element={<MachineTransactions />} />
+            <Route path="/inventory" element={<Inventory />} />
+            <Route path="/reports" element={<Reports />} />
             <Route path="*" element={<NotFound />} />
           </Route>
         </Routes>

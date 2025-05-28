@@ -1,7 +1,23 @@
 
 import React, { useState } from 'react';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { 
+  Search, 
+  Filter, 
+  Plus, 
+  FileDown, 
+  ArrowUpDown,
+  MoreHorizontal,
+  Eye,
+  Pencil,
+  Trash2,
+  Loader2
+} from 'lucide-react';
+import { 
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle
+} from '@/components/ui/card';
 import {
   Table,
   TableBody,
@@ -9,57 +25,90 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from '@/components/ui/table';
-import { Badge } from '@/components/ui/badge';
-import { Plus, Eye, Edit, Loader2 } from 'lucide-react';
-import QuickActionButtons from '@/components/QuickActionButtons';
-import MachineTransactionForm from '@/components/MachineTransactionForm';
-import { useMachineTransactions, useCreateMachineTransaction } from '@/hooks/useMachineTransactions';
-import { useMachines } from '@/hooks/useMachines';
+} from "@/components/ui/table";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
-import { formatCurrency, formatDate, getStatusColor } from '@/utils/statusHelpers';
+import { useMachineTransactions, useCreateMachineTransaction, type MachineTransaction } from '@/hooks/useMachineTransactions';
+import { getStatusColor, formatDate } from '@/utils/statusHelpers';
+import MachineTransactionForm from '@/components/MachineTransactionForm';
 
 const MachineTransactions = () => {
-  const [isFormOpen, setIsFormOpen] = useState(false);
-  const [selectedTransactionType, setSelectedTransactionType] = useState<string>('');
+  const [searchTerm, setSearchTerm] = useState('');
+  const [sortBy, setSortBy] = useState<keyof MachineTransaction>('created_at');
+  const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
+  const [showForm, setShowForm] = useState(false);
   const { toast } = useToast();
 
-  const { data: transactions = [], isLoading: transactionsLoading } = useMachineTransactions();
-  const { data: machines = [] } = useMachines();
+  const { data: transactions = [], isLoading, error } = useMachineTransactions();
   const createTransaction = useCreateMachineTransaction();
 
-  const handleQuickAction = (type: string) => {
-    setSelectedTransactionType(type);
-    setIsFormOpen(true);
+  const handleSort = (column: keyof MachineTransaction) => {
+    if (sortBy === column) {
+      setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
+    } else {
+      setSortBy(column);
+      setSortDirection('asc');
+    }
   };
 
-  const handleFormSubmit = async (data: any) => {
-    try {
-      await createTransaction.mutateAsync({
-        transaction_number: `MT-${Date.now()}`,
-        machine_id: data.machineId,
-        transaction_type: data.transactionType,
-        start_date: data.startDate,
-        end_date: data.endDate,
-        borrower: data.borrower,
-        borrower_department: data.borrowerDepartment,
-        site_location: data.siteLocation,
-        service_type: data.serviceType,
-        service_provider: data.serviceProvider,
-        damage_description: data.damageDescription,
-        damage_level: data.damageLevel,
-        repair_cost: data.repairCost,
-        notes: data.notes,
-        created_by: 'Current User',
-      });
+  const filteredTransactions = transactions.filter(transaction =>
+    transaction.transaction_number.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    transaction.transaction_type.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    (transaction.borrower?.toLowerCase().includes(searchTerm.toLowerCase()) ?? false) ||
+    (transaction.machines?.name?.toLowerCase().includes(searchTerm.toLowerCase()) ?? false)
+  );
 
+  const sortedTransactions = [...filteredTransactions].sort((a, b) => {
+    const aValue = a[sortBy];
+    const bValue = b[sortBy];
+    
+    if (aValue == null && bValue == null) return 0;
+    if (aValue == null) return sortDirection === 'asc' ? 1 : -1;
+    if (bValue == null) return sortDirection === 'asc' ? -1 : 1;
+    
+    if (aValue < bValue) return sortDirection === 'asc' ? -1 : 1;
+    if (aValue > bValue) return sortDirection === 'asc' ? 1 : -1;
+    return 0;
+  });
+
+  const handleCreateTransaction = () => {
+    setShowForm(true);
+  };
+
+  const handleSubmitTransaction = async (data: any) => {
+    try {
+      const transactionData = {
+        transaction_number: data.transaction_number,
+        machine_id: data.machine_id,
+        transaction_type: data.transaction_type,
+        start_date: data.start_date,
+        end_date: data.end_date || null,
+        borrower: data.borrower || null,
+        borrower_department: data.borrower_department || null,
+        site_location: data.site_location || null,
+        service_type: data.service_type || null,
+        service_provider: data.service_provider || null,
+        damage_description: data.damage_description || null,
+        damage_level: data.damage_level || null,
+        repair_cost: data.repair_cost || null,
+        notes: data.notes || null,
+        status: data.status || 'active',
+        created_by: 'Current User'
+      };
+
+      await createTransaction.mutateAsync(transactionData);
       toast({
         title: "Transaksi berhasil dibuat",
         description: "Data transaksi mesin telah disimpan ke database.",
       });
-
-      setIsFormOpen(false);
-      setSelectedTransactionType('');
+      setShowForm(false);
     } catch (error) {
       toast({
         title: "Error",
@@ -69,105 +118,117 @@ const MachineTransactions = () => {
     }
   };
 
-  const getTransactionTypeLabel = (type: string) => {
-    switch (type) {
-      case 'local_borrow': return 'Peminjaman Lokal';
-      case 'site_borrow': return 'Peminjaman Site';
-      case 'service': return 'Service';
-      case 'damage_report': return 'Laporan Kerusakan';
-      default: return type;
-    }
-  };
-
-  const getTransactionTypeColor = (type: string) => {
-    switch (type) {
-      case 'local_borrow': return 'bg-blue-100 text-blue-800';
-      case 'site_borrow': return 'bg-purple-100 text-purple-800';
-      case 'service': return 'bg-orange-100 text-orange-800';
-      case 'damage_report': return 'bg-red-100 text-red-800';
-      default: return 'bg-gray-100 text-gray-800';
-    }
-  };
-
-  const getDamageLevelColor = (level?: string) => {
-    if (!level) return 'bg-gray-100 text-gray-800';
-    switch (level) {
-      case 'low': return 'bg-green-100 text-green-800';
-      case 'medium': return 'bg-yellow-100 text-yellow-800';
-      case 'high': return 'bg-orange-100 text-orange-800';
-      case 'critical': return 'bg-red-100 text-red-800';
-      default: return 'bg-gray-100 text-gray-800';
-    }
-  };
-
-  const getStatusLabel = (status: string) => {
-    switch (status) {
-      case 'active': return 'Aktif';
-      case 'completed': return 'Selesai';
-      case 'pending': return 'Pending';
-      case 'cancelled': return 'Dibatalkan';
-      default: return status;
-    }
-  };
+  if (error) {
+    return (
+      <div className="space-y-6">
+        <div className="text-center text-red-600">
+          Error loading machine transactions: {error.message}
+        </div>
+      </div>
+    );
+  }
 
   return (
-    <div className="container mx-auto p-6 space-y-6">
-      <div className="flex items-center justify-between">
+    <div className="space-y-6">
+      <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">Transaksi Mesin</h1>
-          <p className="text-gray-600 mt-1">Kelola semua transaksi mesin perusahaan</p>
+          <h1 className="text-2xl font-bold">Machine Transactions</h1>
+          <p className="text-gray-500">Kelola transaksi dan penggunaan mesin</p>
         </div>
-        <Button onClick={() => setIsFormOpen(true)} className="flex items-center gap-2">
-          <Plus className="h-4 w-4" />
-          Tambah Transaksi
+        <Button onClick={handleCreateTransaction}>
+          <Plus className="mr-2 h-4 w-4" /> Create Transaction
         </Button>
       </div>
 
       <Card>
-        <CardHeader>
-          <CardTitle>Aksi Cepat</CardTitle>
+        <CardHeader className="pb-3">
+          <CardTitle>Transaction History</CardTitle>
         </CardHeader>
         <CardContent>
-          <QuickActionButtons onQuickAction={handleQuickAction} />
-        </CardContent>
-      </Card>
+          <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-4 gap-4">
+            <div className="relative w-full md:w-auto md:min-w-[320px]">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+              <Input
+                placeholder="Search transactions..."
+                className="pl-9"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+              />
+            </div>
+            <div className="flex items-center gap-2">
+              <Button variant="outline" size="sm">
+                <Filter className="mr-2 h-4 w-4" /> Filter
+              </Button>
+              <Button variant="outline" size="sm">
+                <FileDown className="mr-2 h-4 w-4" /> Export
+              </Button>
+            </div>
+          </div>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Riwayat Transaksi</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="overflow-x-auto">
+          <div className="border rounded-md">
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>No. Transaksi</TableHead>
-                  <TableHead>Mesin</TableHead>
-                  <TableHead>Jenis Transaksi</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>Tanggal</TableHead>
-                  <TableHead>Peminjam/PIC</TableHead>
-                  <TableHead>Biaya</TableHead>
-                  <TableHead>Level Kerusakan</TableHead>
-                  <TableHead>Aksi</TableHead>
+                  <TableHead className="w-[150px] cursor-pointer" onClick={() => handleSort('transaction_number')}>
+                    <div className="flex items-center">
+                      Transaction #
+                      {sortBy === 'transaction_number' && (
+                        <ArrowUpDown className="ml-2 h-3 w-3" />
+                      )}
+                    </div>
+                  </TableHead>
+                  <TableHead className="cursor-pointer" onClick={() => handleSort('machine_id')}>
+                    <div className="flex items-center">
+                      Machine
+                      {sortBy === 'machine_id' && (
+                        <ArrowUpDown className="ml-2 h-3 w-3" />
+                      )}
+                    </div>
+                  </TableHead>
+                  <TableHead className="text-center cursor-pointer" onClick={() => handleSort('transaction_type')}>
+                    <div className="flex items-center justify-center">
+                      Type
+                      {sortBy === 'transaction_type' && (
+                        <ArrowUpDown className="ml-2 h-3 w-3" />
+                      )}
+                    </div>
+                  </TableHead>
+                  <TableHead className="hidden md:table-cell cursor-pointer" onClick={() => handleSort('borrower')}>
+                    <div className="flex items-center">
+                      Borrower
+                      {sortBy === 'borrower' && (
+                        <ArrowUpDown className="ml-2 h-3 w-3" />
+                      )}
+                    </div>
+                  </TableHead>
+                  <TableHead className="hidden md:table-cell cursor-pointer" onClick={() => handleSort('start_date')}>
+                    <div className="flex items-center">
+                      Date
+                      {sortBy === 'start_date' && (
+                        <ArrowUpDown className="ml-2 h-3 w-3" />
+                      )}
+                    </div>
+                  </TableHead>
+                  <TableHead className="text-center">Status</TableHead>
+                  <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {transactionsLoading ? (
+                {isLoading ? (
                   <TableRow>
-                    <TableCell colSpan={9} className="h-24 text-center">
+                    <TableCell colSpan={7} className="h-24 text-center">
                       <Loader2 className="h-6 w-6 animate-spin mx-auto" />
                       <p className="mt-2">Loading transactions...</p>
                     </TableCell>
                   </TableRow>
-                ) : transactions.length === 0 ? (
+                ) : sortedTransactions.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={9} className="h-24 text-center">
+                    <TableCell colSpan={7} className="h-24 text-center">
                       No transactions found
                     </TableCell>
                   </TableRow>
                 ) : (
-                  transactions.map((transaction) => (
+                  sortedTransactions.map((transaction) => (
                     <TableRow key={transaction.id}>
                       <TableCell className="font-medium">
                         {transaction.transaction_number}
@@ -178,51 +239,48 @@ const MachineTransactions = () => {
                           <div className="text-sm text-gray-500">{transaction.machines?.name}</div>
                         </div>
                       </TableCell>
-                      <TableCell>
-                        <Badge className={getTransactionTypeColor(transaction.transaction_type)}>
-                          {getTransactionTypeLabel(transaction.transaction_type)}
-                        </Badge>
+                      <TableCell className="text-center">
+                        <span className="px-2 py-1 rounded-full text-xs capitalize bg-blue-100 text-blue-800">
+                          {transaction.transaction_type.replace('_', ' ')}
+                        </span>
                       </TableCell>
-                      <TableCell>
-                        <Badge className={getStatusColor(transaction.status || 'pending')}>
-                          {getStatusLabel(transaction.status || 'pending')}
-                        </Badge>
-                      </TableCell>
-                      <TableCell>
+                      <TableCell className="hidden md:table-cell">
                         <div>
-                          <div>{formatDate(transaction.start_date)}</div>
-                          {transaction.end_date && (
-                            <div className="text-sm text-gray-500">s/d {formatDate(transaction.end_date)}</div>
-                          )}
+                          <div className="font-medium">{transaction.borrower || '-'}</div>
+                          <div className="text-xs text-gray-500">{transaction.borrower_department || ''}</div>
                         </div>
                       </TableCell>
-                      <TableCell>
-                        {transaction.borrower || transaction.service_provider || transaction.created_by}
-                        {transaction.borrower_department && (
-                          <div className="text-sm text-gray-500">{transaction.borrower_department}</div>
+                      <TableCell className="hidden md:table-cell">
+                        <div>{formatDate(transaction.start_date)}</div>
+                        {transaction.end_date && (
+                          <div className="text-xs text-gray-500">to {formatDate(transaction.end_date)}</div>
                         )}
                       </TableCell>
-                      <TableCell>
-                        {transaction.repair_cost ? formatCurrency(transaction.repair_cost) : '-'}
+                      <TableCell className="text-center">
+                        <span className={`px-2 py-1 rounded-full text-xs capitalize ${getStatusColor(transaction.status || 'active')}`}>
+                          {transaction.status || 'active'}
+                        </span>
                       </TableCell>
-                      <TableCell>
-                        {transaction.damage_level ? (
-                          <Badge className={getDamageLevelColor(transaction.damage_level)}>
-                            {transaction.damage_level === 'low' ? 'Rendah' :
-                             transaction.damage_level === 'medium' ? 'Sedang' :
-                             transaction.damage_level === 'high' ? 'Tinggi' : 'Kritis'}
-                          </Badge>
-                        ) : '-'}
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex gap-2">
-                          <Button variant="outline" size="sm">
-                            <Eye className="h-4 w-4" />
-                          </Button>
-                          <Button variant="outline" size="sm">
-                            <Edit className="h-4 w-4" />
-                          </Button>
-                        </div>
+                      <TableCell className="text-right">
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" className="h-8 w-8 p-0">
+                              <span className="sr-only">Open menu</span>
+                              <MoreHorizontal className="h-4 w-4" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            <DropdownMenuItem>
+                              <Eye className="mr-2 h-4 w-4" /> View Details
+                            </DropdownMenuItem>
+                            <DropdownMenuItem>
+                              <Pencil className="mr-2 h-4 w-4" /> Edit
+                            </DropdownMenuItem>
+                            <DropdownMenuItem>
+                              <Trash2 className="mr-2 h-4 w-4" /> Delete
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
                       </TableCell>
                     </TableRow>
                   ))
@@ -230,17 +288,20 @@ const MachineTransactions = () => {
               </TableBody>
             </Table>
           </div>
+          
+          <div className="flex items-center justify-end space-x-2 py-4">
+            <div className="text-sm text-gray-500">
+              Showing <span className="font-medium">{sortedTransactions.length}</span> of{" "}
+              <span className="font-medium">{transactions.length}</span> transactions
+            </div>
+          </div>
         </CardContent>
       </Card>
 
-      {isFormOpen && (
-        <MachineTransactionForm
-          transactionType={selectedTransactionType}
-          onClose={() => {
-            setIsFormOpen(false);
-            setSelectedTransactionType('');
-          }}
-          onSubmit={handleFormSubmit}
+      {showForm && (
+        <MachineTransactionForm 
+          onClose={() => setShowForm(false)}
+          onSubmit={handleSubmitTransaction}
         />
       )}
     </div>
