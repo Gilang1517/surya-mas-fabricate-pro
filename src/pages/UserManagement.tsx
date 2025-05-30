@@ -35,8 +35,8 @@ const UserManagement = () => {
   }
 
   const totalUsers = users?.length || 0;
-  const adminUsers = users?.filter(user => 
-    user.user_roles.some(role => role.role === 'admin')
+  const adminUsers = users?.filter((user: any) => 
+    user.user_roles?.some((role: any) => role.role === 'admin')
   ).length || 0;
   const regularUsers = totalUsers - adminUsers;
 
@@ -97,8 +97,8 @@ const UserManagement = () => {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {users?.map((user) => {
-                const userRole = user.user_roles[0]?.role || 'user';
+              {users?.map((user: any) => {
+                const userRole = user.user_roles?.[0]?.role || 'user';
                 const isCurrentUser = user.id === currentUser?.id;
                 
                 return (
