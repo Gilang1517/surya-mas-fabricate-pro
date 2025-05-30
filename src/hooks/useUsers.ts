@@ -1,11 +1,23 @@
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import type { Tables } from '@/integrations/supabase/types';
 import { useToast } from '@/hooks/use-toast';
 
-export type Profile = Tables<'profiles'>;
-export type UserRole = Tables<'user_roles'>;
+export interface Profile {
+  id: string;
+  full_name: string | null;
+  email: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface UserRole {
+  id: string;
+  user_id: string;
+  role: 'admin' | 'user';
+  assigned_at: string;
+  assigned_by: string | null;
+}
 
 export type UserWithRole = Profile & {
   user_roles: UserRole[];
@@ -15,6 +27,7 @@ export const useUsers = () => {
   return useQuery({
     queryKey: ['users'],
     queryFn: async () => {
+      console.log('Fetching users...');
       const { data, error } = await supabase
         .from('profiles')
         .select(`
@@ -23,8 +36,13 @@ export const useUsers = () => {
         `)
         .order('created_at', { ascending: false });
       
-      if (error) throw error;
-      return data as any[];
+      if (error) {
+        console.error('Error fetching users:', error);
+        throw error;
+      }
+      
+      console.log('Users fetched:', data);
+      return data as UserWithRole[];
     },
   });
 };
@@ -35,6 +53,8 @@ export const useUpdateUserRole = () => {
   
   return useMutation({
     mutationFn: async ({ userId, role }: { userId: string; role: 'admin' | 'user' }) => {
+      console.log('Updating user role:', userId, role);
+      
       // First, delete existing roles for this user
       await supabase
         .from('user_roles')
@@ -63,9 +83,10 @@ export const useUpdateUserRole = () => {
       });
     },
     onError: (error: any) => {
+      console.error('Error updating user role:', error);
       toast({
         title: "Gagal",
-        description: error.message,
+        description: error.message || "Terjadi kesalahan saat memperbarui peran",
         variant: "destructive",
       });
     },
@@ -78,6 +99,8 @@ export const useDeleteUser = () => {
   
   return useMutation({
     mutationFn: async (userId: string) => {
+      console.log('Deleting user:', userId);
+      
       // Delete user roles first
       await supabase
         .from('user_roles')
@@ -101,9 +124,10 @@ export const useDeleteUser = () => {
       });
     },
     onError: (error: any) => {
+      console.error('Error deleting user:', error);
       toast({
         title: "Gagal",
-        description: error.message,
+        description: error.message || "Terjadi kesalahan saat menghapus pengguna",
         variant: "destructive",
       });
     },

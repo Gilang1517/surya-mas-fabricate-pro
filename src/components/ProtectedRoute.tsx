@@ -14,6 +14,8 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
 }) => {
   const { user, loading, isAdmin } = useAuth();
 
+  console.log('ProtectedRoute:', { user: !!user, loading, isAdmin, requireAdmin });
+
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -26,10 +28,12 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
   }
 
   if (!user) {
+    console.log('No user, redirecting to auth');
     return <Navigate to="/auth" replace />;
   }
 
   if (requireAdmin && !isAdmin) {
+    console.log('Admin required but user is not admin');
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">

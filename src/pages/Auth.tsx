@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
@@ -14,16 +14,29 @@ const Auth = () => {
   const [password, setPassword] = useState('');
   const [fullName, setFullName] = useState('');
   const [loading, setLoading] = useState(false);
-  const { signIn, signUp } = useAuth();
+  const { signIn, signUp, user } = useAuth();
   const navigate = useNavigate();
+
+  // Redirect if already authenticated
+  useEffect(() => {
+    if (user) {
+      console.log('User already authenticated, redirecting to dashboard');
+      navigate('/dashboard');
+    }
+  }, [user, navigate]);
 
   const handleSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!email || !password) {
+      return;
+    }
+    
     setLoading(true);
     try {
       await signIn(email, password);
       navigate('/dashboard');
     } catch (error) {
+      console.error('Sign in failed:', error);
       // Error is handled in the hook
     } finally {
       setLoading(false);
@@ -32,11 +45,16 @@ const Auth = () => {
 
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!email || !password || !fullName) {
+      return;
+    }
+    
     setLoading(true);
     try {
       await signUp(email, password, fullName);
-      navigate('/dashboard');
+      // Don't auto-navigate after signup, let user confirm email first
     } catch (error) {
+      console.error('Sign up failed:', error);
       // Error is handled in the hook
     } finally {
       setLoading(false);
@@ -86,6 +104,7 @@ const Auth = () => {
                       onChange={(e) => setEmail(e.target.value)}
                       required
                       placeholder="nama@contoh.com"
+                      disabled={loading}
                     />
                   </div>
                   <div>
@@ -97,6 +116,7 @@ const Auth = () => {
                       onChange={(e) => setPassword(e.target.value)}
                       required
                       placeholder="Masukkan password"
+                      disabled={loading}
                     />
                   </div>
                   <Button type="submit" className="w-full" disabled={loading}>
@@ -116,6 +136,7 @@ const Auth = () => {
                       onChange={(e) => setFullName(e.target.value)}
                       required
                       placeholder="Masukkan nama lengkap"
+                      disabled={loading}
                     />
                   </div>
                   <div>
@@ -127,6 +148,7 @@ const Auth = () => {
                       onChange={(e) => setEmail(e.target.value)}
                       required
                       placeholder="nama@contoh.com"
+                      disabled={loading}
                     />
                   </div>
                   <div>
@@ -139,6 +161,7 @@ const Auth = () => {
                       required
                       placeholder="Masukkan password"
                       minLength={6}
+                      disabled={loading}
                     />
                   </div>
                   <Button type="submit" className="w-full" disabled={loading}>
