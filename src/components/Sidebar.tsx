@@ -1,6 +1,7 @@
 
 import React from 'react';
 import { NavLink } from 'react-router-dom';
+import { useAuth } from '@/hooks/useAuth';
 import { 
   LayoutDashboard, 
   Package, 
@@ -11,10 +12,14 @@ import {
   ClipboardList,
   FileText,
   UserCheck,
-  Wrench
+  Wrench,
+  Users,
+  Settings
 } from 'lucide-react';
 
 const Sidebar = () => {
+  const { isAdmin } = useAuth();
+
   const menuItems = [
     { icon: LayoutDashboard, label: 'Dashboard', path: '/dashboard' },
     { icon: Package, label: 'Materials', path: '/materials' },
@@ -25,6 +30,10 @@ const Sidebar = () => {
     { icon: Warehouse, label: 'Inventory', path: '/inventory' },
     { icon: ClipboardList, label: 'Stock Control', path: '/stock-control' },
     { icon: BarChart3, label: 'Reports', path: '/reports' },
+  ];
+
+  const adminMenuItems = [
+    { icon: Users, label: 'User Management', path: '/user-management' },
   ];
 
   return (
@@ -52,6 +61,34 @@ const Sidebar = () => {
               </NavLink>
             </li>
           ))}
+          
+          {isAdmin && (
+            <>
+              <li className="pt-4">
+                <div className="flex items-center space-x-3 px-3 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                  <Settings className="w-4 h-4" />
+                  <span>Administration</span>
+                </div>
+              </li>
+              {adminMenuItems.map((item) => (
+                <li key={item.path}>
+                  <NavLink
+                    to={item.path}
+                    className={({ isActive }) =>
+                      `flex items-center space-x-3 p-3 rounded-lg transition-colors ${
+                        isActive
+                          ? 'bg-red-50 text-red-600 border-r-2 border-red-600'
+                          : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
+                      }`
+                    }
+                  >
+                    <item.icon className="w-5 h-5" />
+                    <span className="font-medium">{item.label}</span>
+                  </NavLink>
+                </li>
+              ))}
+            </>
+          )}
         </ul>
       </nav>
       
