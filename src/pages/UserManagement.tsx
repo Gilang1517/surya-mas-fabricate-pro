@@ -121,7 +121,9 @@ const UserManagement = () => {
               </TableHeader>
               <TableBody>
                 {users.map((user) => {
-                  const userRole = user.user_roles?.[0]?.role || 'user';
+                  const userRole = user.user_roles && user.user_roles.length > 0 
+                    ? user.user_roles[0].role 
+                    : 'user';
                   const isCurrentUser = user.id === currentUser?.id;
                   
                   return (

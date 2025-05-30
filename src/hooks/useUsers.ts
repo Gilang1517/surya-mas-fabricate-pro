@@ -20,7 +20,7 @@ export interface UserRole {
 }
 
 export type UserWithRole = Profile & {
-  user_roles: UserRole[];
+  user_roles?: UserRole[];
 };
 
 export const useUsers = () => {
@@ -28,21 +28,46 @@ export const useUsers = () => {
     queryKey: ['users'],
     queryFn: async () => {
       console.log('Fetching users...');
-      const { data, error } = await supabase
-        .from('profiles')
-        .select(`
-          *,
-          user_roles (*)
-        `)
-        .order('created_at', { ascending: false });
-      
-      if (error) {
-        console.error('Error fetching users:', error);
+      try {
+        // First get all profiles
+        const { data: profiles, error: profilesError } = await supabase
+          .from('profiles')
+          .select('*')
+          .order('created_at', { ascending: false });
+        
+        if (profilesError) {
+          console.error('Error fetching profiles:', profilesError);
+          throw profilesError;
+        }
+
+        if (!profiles || profiles.length === 0) {
+          console.log('No profiles found');
+          return [];
+        }
+
+        // Then get user roles separately
+        const { data: userRoles, error: rolesError } = await supabase
+          .from('user_roles')
+          .select('*');
+        
+        if (rolesError) {
+          console.error('Error fetching user roles:', rolesError);
+          // Don't throw error for roles, just log it
+          console.log('Continuing without roles data');
+        }
+
+        // Combine the data manually
+        const usersWithRoles: UserWithRole[] = profiles.map((profile) => ({
+          ...profile,
+          user_roles: userRoles?.filter((role) => role.user_id === profile.id) || []
+        }));
+        
+        console.log('Users fetched successfully:', usersWithRoles);
+        return usersWithRoles;
+      } catch (error) {
+        console.error('Error in useUsers queryFn:', error);
         throw error;
       }
-      
-      console.log('Users fetched:', data);
-      return data as UserWithRole[];
     },
   });
 };
@@ -55,25 +80,46 @@ export const useUpdateUserRole = () => {
     mutationFn: async ({ userId, role }: { userId: string; role: 'admin' | 'user' }) => {
       console.log('Updating user role:', userId, role);
       
-      // First, delete existing roles for this user
-      await supabase
-        .from('user_roles')
-        .delete()
-        .eq('user_id', userId);
-      
-      // Then insert the new role
-      const { data, error } = await supabase
-        .from('user_roles')
-        .insert({
-          user_id: userId,
-          role: role,
-          assigned_by: (await supabase.auth.getUser()).data.user?.id,
-        })
-        .select()
-        .single();
-      
-      if (error) throw error;
-      return data;
+      try {
+        // First, delete existing roles for this user
+        const { error: deleteError } = await supabase
+          .from('user_roles')
+          .delete()
+          .eq('user_id', userId);
+        
+        if (deleteError) {
+          console.error('Error deleting existing roles:', deleteError);
+          throw deleteError;
+        }
+        
+        // Get current user for assigned_by
+        const { data: { user }, error: userError } = await supabase.auth.getUser();
+        if (userError) {
+          console.error('Error getting current user:', userError);
+        }
+        
+        // Then insert the new role
+        const { data, error } = await supabase
+          .from('user_roles')
+          .insert({
+            user_id: userId,
+            role: role,
+            assigned_by: user?.id || null,
+          })
+          .select()
+          .single();
+        
+        if (error) {
+          console.error('Error inserting new role:', error);
+          throw error;
+        }
+        
+        console.log('Role updated successfully:', data);
+        return data;
+      } catch (error) {
+        console.error('Error in updateUserRole mutation:', error);
+        throw error;
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['users'] });
@@ -101,20 +147,36 @@ export const useDeleteUser = () => {
     mutationFn: async (userId: string) => {
       console.log('Deleting user:', userId);
       
-      // Delete user roles first
-      await supabase
-        .from('user_roles')
-        .delete()
-        .eq('user_id', userId);
-      
-      // Delete profile
-      await supabase
-        .from('profiles')
-        .delete()
-        .eq('id', userId);
-      
-      // Note: We can't delete from auth.users via the API
-      // This would need to be done via Supabase admin functions
+      try {
+        // Delete user roles first
+        const { error: rolesError } = await supabase
+          .from('user_roles')
+          .delete()
+          .eq('user_id', userId);
+        
+        if (rolesError) {
+          console.error('Error deleting user roles:', rolesError);
+          throw rolesError;
+        }
+        
+        // Delete profile
+        const { error: profileError } = await supabase
+          .from('profiles')
+          .delete()
+          .eq('id', userId);
+        
+        if (profileError) {
+          console.error('Error deleting profile:', profileError);
+          throw profileError;
+        }
+        
+        console.log('User deleted successfully');
+        // Note: We can't delete from auth.users via the API
+        // This would need to be done via Supabase admin functions
+      } catch (error) {
+        console.error('Error in deleteUser mutation:', error);
+        throw error;
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['users'] });
