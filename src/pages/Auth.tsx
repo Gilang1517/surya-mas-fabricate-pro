@@ -7,13 +7,15 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { LogIn, UserPlus } from 'lucide-react';
+import { LogIn, UserPlus, Eye, EyeOff } from 'lucide-react';
 
 const Auth = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [fullName, setFullName] = useState('');
   const [loading, setLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const [errors, setErrors] = useState<{[key: string]: string}>({});
   const { signIn, signUp, user } = useAuth();
   const navigate = useNavigate();
 
@@ -25,19 +27,45 @@ const Auth = () => {
     }
   }, [user, navigate]);
 
+  const validateForm = (isSignUp = false) => {
+    const newErrors: {[key: string]: string} = {};
+    
+    if (!email.trim()) {
+      newErrors.email = 'Email harus diisi';
+    } else if (!/\S+@\S+\.\S+/.test(email)) {
+      newErrors.email = 'Format email tidak valid';
+    }
+    
+    if (!password) {
+      newErrors.password = 'Password harus diisi';
+    } else if (password.length < 6) {
+      newErrors.password = 'Password minimal 6 karakter';
+    }
+    
+    if (isSignUp && !fullName.trim()) {
+      newErrors.fullName = 'Nama lengkap harus diisi';
+    }
+    
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
   const handleSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!email || !password) {
+    
+    if (!validateForm()) {
       return;
     }
     
     setLoading(true);
+    setErrors({});
+    
     try {
       await signIn(email, password);
-      navigate('/dashboard');
-    } catch (error) {
+      // Navigation will be handled by the signIn function
+    } catch (error: any) {
       console.error('Sign in failed:', error);
-      // Error is handled in the hook
+      setErrors({ general: 'Login gagal. Silakan coba lagi.' });
     } finally {
       setLoading(false);
     }
@@ -45,20 +73,30 @@ const Auth = () => {
 
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!email || !password || !fullName) {
+    
+    if (!validateForm(true)) {
       return;
     }
     
     setLoading(true);
+    setErrors({});
+    
     try {
       await signUp(email, password, fullName);
-      // Don't auto-navigate after signup, let user confirm email first
-    } catch (error) {
+      // Reset form after successful signup
+      setEmail('');
+      setPassword('');
+      setFullName('');
+    } catch (error: any) {
       console.error('Sign up failed:', error);
-      // Error is handled in the hook
+      setErrors({ general: 'Registrasi gagal. Silakan coba lagi.' });
     } finally {
       setLoading(false);
     }
+  };
+
+  const clearErrors = () => {
+    setErrors({});
   };
 
   return (
@@ -81,7 +119,7 @@ const Auth = () => {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <Tabs defaultValue="signin" className="w-full">
+            <Tabs defaultValue="signin" className="w-full" onValueChange={clearErrors}>
               <TabsList className="grid w-full grid-cols-2">
                 <TabsTrigger value="signin">
                   <LogIn className="w-4 h-4 mr-2" />
@@ -93,6 +131,12 @@ const Auth = () => {
                 </TabsTrigger>
               </TabsList>
 
+              {errors.general && (
+                <div className="mt-4 p-3 bg-red-50 border border-red-200 rounded-md">
+                  <p className="text-sm text-red-600">{errors.general}</p>
+                </div>
+              )}
+
               <TabsContent value="signin">
                 <form onSubmit={handleSignIn} className="space-y-4">
                   <div>
@@ -101,23 +145,41 @@ const Auth = () => {
                       id="signin-email"
                       type="email"
                       value={email}
-                      onChange={(e) => setEmail(e.target.value)}
-                      required
+                      onChange={(e) => {
+                        setEmail(e.target.value);
+                        if (errors.email) setErrors(prev => ({...prev, email: ''}));
+                      }}
                       placeholder="nama@contoh.com"
                       disabled={loading}
+                      className={errors.email ? 'border-red-500' : ''}
                     />
+                    {errors.email && <p className="text-sm text-red-600 mt-1">{errors.email}</p>}
                   </div>
                   <div>
                     <Label htmlFor="signin-password">Password</Label>
-                    <Input
-                      id="signin-password"
-                      type="password"
-                      value={password}
-                      onChange={(e) => setPassword(e.target.value)}
-                      required
-                      placeholder="Masukkan password"
-                      disabled={loading}
-                    />
+                    <div className="relative">
+                      <Input
+                        id="signin-password"
+                        type={showPassword ? "text" : "password"}
+                        value={password}
+                        onChange={(e) => {
+                          setPassword(e.target.value);
+                          if (errors.password) setErrors(prev => ({...prev, password: ''}));
+                        }}
+                        placeholder="Masukkan password"
+                        disabled={loading}
+                        className={errors.password ? 'border-red-500 pr-10' : 'pr-10'}
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowPassword(!showPassword)}
+                        className="absolute right-2 top-1/2 transform -translate-y-1/2"
+                        disabled={loading}
+                      >
+                        {showPassword ? <EyeOff className="h-4 w-4 text-gray-400" /> : <Eye className="h-4 w-4 text-gray-400" />}
+                      </button>
+                    </div>
+                    {errors.password && <p className="text-sm text-red-600 mt-1">{errors.password}</p>}
                   </div>
                   <Button type="submit" className="w-full" disabled={loading}>
                     {loading ? 'Memproses...' : 'Masuk'}
@@ -133,11 +195,15 @@ const Auth = () => {
                       id="signup-name"
                       type="text"
                       value={fullName}
-                      onChange={(e) => setFullName(e.target.value)}
-                      required
+                      onChange={(e) => {
+                        setFullName(e.target.value);
+                        if (errors.fullName) setErrors(prev => ({...prev, fullName: ''}));
+                      }}
                       placeholder="Masukkan nama lengkap"
                       disabled={loading}
+                      className={errors.fullName ? 'border-red-500' : ''}
                     />
+                    {errors.fullName && <p className="text-sm text-red-600 mt-1">{errors.fullName}</p>}
                   </div>
                   <div>
                     <Label htmlFor="signup-email">Email</Label>
@@ -145,24 +211,42 @@ const Auth = () => {
                       id="signup-email"
                       type="email"
                       value={email}
-                      onChange={(e) => setEmail(e.target.value)}
-                      required
+                      onChange={(e) => {
+                        setEmail(e.target.value);
+                        if (errors.email) setErrors(prev => ({...prev, email: ''}));
+                      }}
                       placeholder="nama@contoh.com"
                       disabled={loading}
+                      className={errors.email ? 'border-red-500' : ''}
                     />
+                    {errors.email && <p className="text-sm text-red-600 mt-1">{errors.email}</p>}
                   </div>
                   <div>
                     <Label htmlFor="signup-password">Password</Label>
-                    <Input
-                      id="signup-password"
-                      type="password"
-                      value={password}
-                      onChange={(e) => setPassword(e.target.value)}
-                      required
-                      placeholder="Masukkan password"
-                      minLength={6}
-                      disabled={loading}
-                    />
+                    <div className="relative">
+                      <Input
+                        id="signup-password"
+                        type={showPassword ? "text" : "password"}
+                        value={password}
+                        onChange={(e) => {
+                          setPassword(e.target.value);
+                          if (errors.password) setErrors(prev => ({...prev, password: ''}));
+                        }}
+                        placeholder="Masukkan password (minimal 6 karakter)"
+                        minLength={6}
+                        disabled={loading}
+                        className={errors.password ? 'border-red-500 pr-10' : 'pr-10'}
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowPassword(!showPassword)}
+                        className="absolute right-2 top-1/2 transform -translate-y-1/2"
+                        disabled={loading}
+                      >
+                        {showPassword ? <EyeOff className="h-4 w-4 text-gray-400" /> : <Eye className="h-4 w-4 text-gray-400" />}
+                      </button>
+                    </div>
+                    {errors.password && <p className="text-sm text-red-600 mt-1">{errors.password}</p>}
                   </div>
                   <Button type="submit" className="w-full" disabled={loading}>
                     {loading ? 'Memproses...' : 'Daftar'}
