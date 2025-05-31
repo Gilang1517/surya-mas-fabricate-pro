@@ -1,4 +1,3 @@
-
 import React from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
@@ -23,6 +22,7 @@ import Inventory from "./pages/Inventory";
 import Reports from "./pages/Reports";
 import StockControl from "./pages/StockControl";
 import UserManagement from "./pages/UserManagement";
+import PermissionManagement from "./pages/PermissionManagement";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -58,6 +58,11 @@ function App() {
                 <Route path="user-management" element={
                   <ProtectedRoute requireAdmin={true}>
                     <UserManagement />
+                  </ProtectedRoute>
+                } />
+                <Route path="permission-management" element={
+                  <ProtectedRoute requireAdmin={true}>
+                    <PermissionManagement />
                   </ProtectedRoute>
                 } />
                 <Route path="*" element={<NotFound />} />

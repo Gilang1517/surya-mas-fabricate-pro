@@ -2,6 +2,7 @@
 import React from 'react';
 import { NavLink } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
+import PermissionGuard from '@/components/PermissionGuard';
 import { 
   LayoutDashboard, 
   Package, 
@@ -14,26 +15,83 @@ import {
   UserCheck,
   Wrench,
   Users,
-  Settings
+  Settings,
+  Shield
 } from 'lucide-react';
 
 const Sidebar = () => {
   const { isAdmin } = useAuth();
 
   const menuItems = [
-    { icon: LayoutDashboard, label: 'Dashboard', path: '/dashboard' },
-    { icon: Package, label: 'Materials', path: '/materials' },
-    { icon: Computer, label: 'Machines', path: '/machines' },
-    { icon: ArrowRightLeft, label: 'Transactions', path: '/transactions' },
-    { icon: UserCheck, label: 'Machine Borrow', path: '/machine-borrow' },
-    { icon: Wrench, label: 'Machine Service', path: '/machine-service' },
-    { icon: Warehouse, label: 'Inventory', path: '/inventory' },
-    { icon: ClipboardList, label: 'Stock Control', path: '/stock-control' },
-    { icon: BarChart3, label: 'Reports', path: '/reports' },
+    { 
+      icon: LayoutDashboard, 
+      label: 'Dashboard', 
+      path: '/dashboard',
+      permission: 'dashboard.view'
+    },
+    { 
+      icon: Package, 
+      label: 'Materials', 
+      path: '/materials',
+      permission: 'materials.view'
+    },
+    { 
+      icon: Computer, 
+      label: 'Machines', 
+      path: '/machines',
+      permission: 'machines.view'
+    },
+    { 
+      icon: ArrowRightLeft, 
+      label: 'Transactions', 
+      path: '/transactions',
+      permission: 'transactions.view'
+    },
+    { 
+      icon: UserCheck, 
+      label: 'Machine Borrow', 
+      path: '/machine-borrow',
+      permission: 'machine_borrow.view'
+    },
+    { 
+      icon: Wrench, 
+      label: 'Machine Service', 
+      path: '/machine-service',
+      permission: 'machine_service.view'
+    },
+    { 
+      icon: Warehouse, 
+      label: 'Inventory', 
+      path: '/inventory',
+      permission: 'inventory.view'
+    },
+    { 
+      icon: ClipboardList, 
+      label: 'Stock Control', 
+      path: '/stock-control',
+      permission: 'stock_control.view'
+    },
+    { 
+      icon: BarChart3, 
+      label: 'Reports', 
+      path: '/reports',
+      permission: 'reports.view'
+    },
   ];
 
   const adminMenuItems = [
-    { icon: Users, label: 'User Management', path: '/user-management' },
+    { 
+      icon: Users, 
+      label: 'User Management', 
+      path: '/user-management',
+      permission: 'users.view'
+    },
+    { 
+      icon: Shield, 
+      label: 'Permission Management', 
+      path: '/permission-management',
+      permission: 'users.manage_roles'
+    },
   ];
 
   return (
@@ -45,21 +103,23 @@ const Sidebar = () => {
       <nav className="flex-1 p-4">
         <ul className="space-y-2">
           {menuItems.map((item) => (
-            <li key={item.path}>
-              <NavLink
-                to={item.path}
-                className={({ isActive }) =>
-                  `flex items-center space-x-3 p-3 rounded-lg transition-colors ${
-                    isActive
-                      ? 'bg-blue-50 text-blue-600 border-r-2 border-blue-600'
-                      : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
-                  }`
-                }
-              >
-                <item.icon className="w-5 h-5" />
-                <span className="font-medium">{item.label}</span>
-              </NavLink>
-            </li>
+            <PermissionGuard key={item.path} permission={item.permission}>
+              <li>
+                <NavLink
+                  to={item.path}
+                  className={({ isActive }) =>
+                    `flex items-center space-x-3 p-3 rounded-lg transition-colors ${
+                      isActive
+                        ? 'bg-blue-50 text-blue-600 border-r-2 border-blue-600'
+                        : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
+                    }`
+                  }
+                >
+                  <item.icon className="w-5 h-5" />
+                  <span className="font-medium">{item.label}</span>
+                </NavLink>
+              </li>
+            </PermissionGuard>
           ))}
           
           {isAdmin && (
@@ -71,21 +131,23 @@ const Sidebar = () => {
                 </div>
               </li>
               {adminMenuItems.map((item) => (
-                <li key={item.path}>
-                  <NavLink
-                    to={item.path}
-                    className={({ isActive }) =>
-                      `flex items-center space-x-3 p-3 rounded-lg transition-colors ${
-                        isActive
-                          ? 'bg-red-50 text-red-600 border-r-2 border-red-600'
-                          : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
-                      }`
-                    }
-                  >
-                    <item.icon className="w-5 h-5" />
-                    <span className="font-medium">{item.label}</span>
-                  </NavLink>
-                </li>
+                <PermissionGuard key={item.path} permission={item.permission}>
+                  <li>
+                    <NavLink
+                      to={item.path}
+                      className={({ isActive }) =>
+                        `flex items-center space-x-3 p-3 rounded-lg transition-colors ${
+                          isActive
+                            ? 'bg-red-50 text-red-600 border-r-2 border-red-600'
+                            : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
+                        }`
+                      }
+                    >
+                      <item.icon className="w-5 h-5" />
+                      <span className="font-medium">{item.label}</span>
+                    </NavLink>
+                  </li>
+                </PermissionGuard>
               ))}
             </>
           )}
