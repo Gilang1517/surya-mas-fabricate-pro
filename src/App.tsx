@@ -62,6 +62,7 @@ function App() {
                 <Route path="machine-service" element={<MachineService />} />
                 <Route path="inventory" element={<Inventory />} />
                 <Route path="reports" element={<Reports />} />
+                <Route path="material-stock-report" element={<MaterialStockReport />} />
                 <Route path="stock-control" element={<StockControl />} />
                 <Route path="user-management" element={
                   <ProtectedRoute requireAdmin={true}>
