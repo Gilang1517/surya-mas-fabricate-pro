@@ -30,7 +30,7 @@ import { materials } from '@/data/mockData';
 
 interface TransactionFormData {
   materialId: string;
-  transactionType: 'receipt' | 'issue' | 'transfer' | 'adjustment';
+  transactionType: 'penerimaan' | 'pemakaian' | 'pengembalian' | 'reject' | 'pengaturan';
   quantity: number;
   movementType: string;
   plant: string;
@@ -57,25 +57,30 @@ const TransactionForm = ({ onClose, onSubmit }: TransactionFormProps) => {
 
   const getMovementTypeOptions = (type: string) => {
     switch (type) {
-      case 'receipt':
+      case 'penerimaan':
         return [
-          { value: '101', label: '101 - GR for Purchase Order' },
-          { value: '102', label: '102 - GR for Purchase Order (Reversal)' },
+          { value: '101', label: '101 - Penerimaan dari Purchase Order' },
+          { value: '102', label: '102 - Pembatalan Penerimaan' },
         ];
-      case 'issue':
+      case 'pemakaian':
         return [
-          { value: '201', label: '201 - Goods Issue for Cost Center' },
-          { value: '261', label: '261 - Goods Issue for Production Order' },
+          { value: '201', label: '201 - Pemakaian untuk Cost Center' },
+          { value: '261', label: '261 - Pemakaian untuk Production Order' },
         ];
-      case 'transfer':
+      case 'pengembalian':
         return [
-          { value: '311', label: '311 - Transfer Posting Plant to Plant' },
-          { value: '301', label: '301 - Transfer Posting Storage Location' },
+          { value: '302', label: '302 - Pengembalian ke Gudang' },
+          { value: '312', label: '312 - Transfer Pengembalian' },
         ];
-      case 'adjustment':
+      case 'reject':
         return [
-          { value: '551', label: '551 - Scrap from Storage Location' },
-          { value: '701', label: '701 - Inventory Difference' },
+          { value: '551', label: '551 - Material Reject' },
+          { value: '552', label: '552 - Material Cacat' },
+        ];
+      case 'pengaturan':
+        return [
+          { value: '701', label: '701 - Penyesuaian Stock' },
+          { value: '702', label: '702 - Koreksi Inventory' },
         ];
       default:
         return [];
@@ -90,7 +95,7 @@ const TransactionForm = ({ onClose, onSubmit }: TransactionFormProps) => {
     <Dialog open={true} onOpenChange={onClose}>
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>Create Material Transaction</DialogTitle>
+          <DialogTitle>Buat Transaksi Material</DialogTitle>
         </DialogHeader>
 
         <Form {...form}>
@@ -99,14 +104,14 @@ const TransactionForm = ({ onClose, onSubmit }: TransactionFormProps) => {
               <FormField
                 control={form.control}
                 name="materialId"
-                rules={{ required: "Material is required" }}
+                rules={{ required: "Material harus dipilih" }}
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Material</FormLabel>
                     <Select onValueChange={field.onChange} defaultValue={field.value}>
                       <FormControl>
                         <SelectTrigger>
-                          <SelectValue placeholder="Select material" />
+                          <SelectValue placeholder="Pilih material" />
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
@@ -125,21 +130,22 @@ const TransactionForm = ({ onClose, onSubmit }: TransactionFormProps) => {
               <FormField
                 control={form.control}
                 name="transactionType"
-                rules={{ required: "Transaction type is required" }}
+                rules={{ required: "Jenis transaksi harus dipilih" }}
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Transaction Type</FormLabel>
+                    <FormLabel>Jenis Transaksi</FormLabel>
                     <Select onValueChange={field.onChange} defaultValue={field.value}>
                       <FormControl>
                         <SelectTrigger>
-                          <SelectValue placeholder="Select type" />
+                          <SelectValue placeholder="Pilih jenis transaksi" />
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        <SelectItem value="receipt">Receipt</SelectItem>
-                        <SelectItem value="issue">Issue</SelectItem>
-                        <SelectItem value="transfer">Transfer</SelectItem>
-                        <SelectItem value="adjustment">Adjustment</SelectItem>
+                        <SelectItem value="penerimaan">Penerimaan</SelectItem>
+                        <SelectItem value="pemakaian">Pemakaian</SelectItem>
+                        <SelectItem value="pengembalian">Pengembalian</SelectItem>
+                        <SelectItem value="reject">Terjadi Reject</SelectItem>
+                        <SelectItem value="pengaturan">Pengaturan</SelectItem>
                       </SelectContent>
                     </Select>
                     <FormMessage />
@@ -151,12 +157,12 @@ const TransactionForm = ({ onClose, onSubmit }: TransactionFormProps) => {
                 control={form.control}
                 name="quantity"
                 rules={{ 
-                  required: "Quantity is required",
-                  min: { value: 0.01, message: "Quantity must be greater than 0" }
+                  required: "Jumlah harus diisi",
+                  min: { value: 0.01, message: "Jumlah harus lebih dari 0" }
                 }}
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Quantity</FormLabel>
+                    <FormLabel>Jumlah</FormLabel>
                     <FormControl>
                       <Input 
                         type="number" 
@@ -174,14 +180,14 @@ const TransactionForm = ({ onClose, onSubmit }: TransactionFormProps) => {
               <FormField
                 control={form.control}
                 name="movementType"
-                rules={{ required: "Movement type is required" }}
+                rules={{ required: "Movement type harus dipilih" }}
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Movement Type</FormLabel>
                     <Select onValueChange={field.onChange} defaultValue={field.value}>
                       <FormControl>
                         <SelectTrigger>
-                          <SelectValue placeholder="Select movement type" />
+                          <SelectValue placeholder="Pilih movement type" />
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
@@ -200,19 +206,19 @@ const TransactionForm = ({ onClose, onSubmit }: TransactionFormProps) => {
               <FormField
                 control={form.control}
                 name="plant"
-                rules={{ required: "Plant is required" }}
+                rules={{ required: "Plant harus dipilih" }}
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Plant</FormLabel>
                     <Select onValueChange={field.onChange} defaultValue={field.value}>
                       <FormControl>
                         <SelectTrigger>
-                          <SelectValue placeholder="Select plant" />
+                          <SelectValue placeholder="Pilih plant" />
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        <SelectItem value="P001">P001 - Main Plant</SelectItem>
-                        <SelectItem value="P002">P002 - Secondary Plant</SelectItem>
+                        <SelectItem value="P001">P001 - Plant Utama</SelectItem>
+                        <SelectItem value="P002">P002 - Plant Kedua</SelectItem>
                       </SelectContent>
                     </Select>
                     <FormMessage />
@@ -223,20 +229,20 @@ const TransactionForm = ({ onClose, onSubmit }: TransactionFormProps) => {
               <FormField
                 control={form.control}
                 name="storageLocation"
-                rules={{ required: "Storage location is required" }}
+                rules={{ required: "Lokasi gudang harus dipilih" }}
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Storage Location</FormLabel>
+                    <FormLabel>Lokasi Gudang</FormLabel>
                     <Select onValueChange={field.onChange} defaultValue={field.value}>
                       <FormControl>
                         <SelectTrigger>
-                          <SelectValue placeholder="Select storage location" />
+                          <SelectValue placeholder="Pilih lokasi gudang" />
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        <SelectItem value="SL01">SL01 - Main Warehouse</SelectItem>
-                        <SelectItem value="SL02">SL02 - Secondary Warehouse</SelectItem>
-                        <SelectItem value="SL03">SL03 - Production Floor</SelectItem>
+                        <SelectItem value="SL01">SL01 - Gudang Utama</SelectItem>
+                        <SelectItem value="SL02">SL02 - Gudang Kedua</SelectItem>
+                        <SelectItem value="SL03">SL03 - Lantai Produksi</SelectItem>
                       </SelectContent>
                     </Select>
                     <FormMessage />
@@ -249,9 +255,9 @@ const TransactionForm = ({ onClose, onSubmit }: TransactionFormProps) => {
                 name="referenceDocument"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Reference Document</FormLabel>
+                    <FormLabel>Dokumen Referensi</FormLabel>
                     <FormControl>
-                      <Input placeholder="PO-2024-001, WO-2024-001, etc." {...field} />
+                      <Input placeholder="PO-2024-001, WO-2024-001, dll." {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -267,13 +273,13 @@ const TransactionForm = ({ onClose, onSubmit }: TransactionFormProps) => {
                     <Select onValueChange={field.onChange} defaultValue={field.value}>
                       <FormControl>
                         <SelectTrigger>
-                          <SelectValue placeholder="Select cost center" />
+                          <SelectValue placeholder="Pilih cost center" />
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        <SelectItem value="CC-PROD">CC-PROD - Production</SelectItem>
+                        <SelectItem value="CC-PROD">CC-PROD - Produksi</SelectItem>
                         <SelectItem value="CC-MAINT">CC-MAINT - Maintenance</SelectItem>
-                        <SelectItem value="CC-ADMIN">CC-ADMIN - Administration</SelectItem>
+                        <SelectItem value="CC-ADMIN">CC-ADMIN - Administrasi</SelectItem>
                       </SelectContent>
                     </Select>
                     <FormMessage />
@@ -287,10 +293,10 @@ const TransactionForm = ({ onClose, onSubmit }: TransactionFormProps) => {
               name="notes"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Notes</FormLabel>
+                  <FormLabel>Catatan</FormLabel>
                   <FormControl>
                     <Textarea 
-                      placeholder="Additional notes about this transaction..."
+                      placeholder="Catatan tambahan tentang transaksi ini..."
                       className="resize-none"
                       {...field}
                     />
@@ -302,10 +308,10 @@ const TransactionForm = ({ onClose, onSubmit }: TransactionFormProps) => {
 
             <div className="flex justify-end space-x-2 pt-4">
               <Button type="button" variant="outline" onClick={onClose}>
-                Cancel
+                Batal
               </Button>
               <Button type="submit">
-                Create Transaction
+                Buat Transaksi
               </Button>
             </div>
           </form>

@@ -5,7 +5,7 @@ export interface MaterialTransaction {
   materialId: string;
   materialNumber: string;
   materialName: string;
-  transactionType: 'receipt' | 'issue' | 'transfer' | 'adjustment';
+  transactionType: 'penerimaan' | 'pemakaian' | 'pengembalian' | 'reject' | 'pengaturan';
   quantity: number;
   unit: string;
   movementType: string;
@@ -27,7 +27,7 @@ export const materialTransactions: MaterialTransaction[] = [
     materialId: '1',
     materialNumber: 'MAT-001',
     materialName: 'Steel Rod 12mm',
-    transactionType: 'receipt',
+    transactionType: 'penerimaan',
     quantity: 100,
     unit: 'PCS',
     movementType: '101',
@@ -39,7 +39,7 @@ export const materialTransactions: MaterialTransaction[] = [
     time: '10:30',
     createdBy: 'Ahmad Doe',
     status: 'posted',
-    notes: 'Good receipt from supplier'
+    notes: 'Penerimaan barang dari supplier'
   },
   {
     id: '2',
@@ -47,7 +47,7 @@ export const materialTransactions: MaterialTransaction[] = [
     materialId: '2',
     materialNumber: 'MAT-002',
     materialName: 'Concrete Mix',
-    transactionType: 'issue',
+    transactionType: 'pemakaian',
     quantity: 50,
     unit: 'KG',
     movementType: '261',
@@ -59,7 +59,7 @@ export const materialTransactions: MaterialTransaction[] = [
     time: '14:15',
     createdBy: 'Budi Smith',
     status: 'posted',
-    notes: 'Material issue for maintenance work'
+    notes: 'Pemakaian material untuk pekerjaan maintenance'
   },
   {
     id: '3',
@@ -67,10 +67,10 @@ export const materialTransactions: MaterialTransaction[] = [
     materialId: '3',
     materialNumber: 'MAT-003',
     materialName: 'Hydraulic Oil',
-    transactionType: 'transfer',
+    transactionType: 'pengembalian',
     quantity: 25,
     unit: 'L',
-    movementType: '311',
+    movementType: '302',
     plant: 'P001',
     storageLocation: 'SL02',
     costCenter: 'CC-PROD',
@@ -78,7 +78,7 @@ export const materialTransactions: MaterialTransaction[] = [
     time: '09:45',
     createdBy: 'Siti Johnson',
     status: 'posted',
-    notes: 'Transfer between storage locations'
+    notes: 'Pengembalian material tidak terpakai'
   },
   {
     id: '4',
@@ -86,7 +86,7 @@ export const materialTransactions: MaterialTransaction[] = [
     materialId: '1',
     materialNumber: 'MAT-001',
     materialName: 'Steel Rod 12mm',
-    transactionType: 'adjustment',
+    transactionType: 'reject',
     quantity: -5,
     unit: 'PCS',
     movementType: '551',
@@ -97,7 +97,7 @@ export const materialTransactions: MaterialTransaction[] = [
     time: '16:20',
     createdBy: 'Rahman Lee',
     status: 'posted',
-    notes: 'Inventory adjustment - damaged items'
+    notes: 'Material reject - barang rusak'
   },
   {
     id: '5',
@@ -105,31 +105,33 @@ export const materialTransactions: MaterialTransaction[] = [
     materialId: '4',
     materialNumber: 'MAT-004',
     materialName: 'Bearing SKF 6208',
-    transactionType: 'receipt',
+    transactionType: 'pengaturan',
     quantity: 20,
     unit: 'PCS',
-    movementType: '101',
+    movementType: '701',
     plant: 'P001',
     storageLocation: 'SL01',
-    referenceDocument: 'PO-2024-002',
+    referenceDocument: 'ADJ-2024-001',
     costCenter: 'CC-MAINT',
     date: '2024-01-11',
     time: '11:00',
     createdBy: 'Ahmad Doe',
     status: 'pending',
-    notes: 'Pending quality inspection'
+    notes: 'Penyesuaian stock inventory'
   }
 ];
 
 export const getTransactionTypeColor = (type: string) => {
   switch (type) {
-    case 'receipt':
+    case 'penerimaan':
       return 'bg-green-100 text-green-800';
-    case 'issue':
+    case 'pemakaian':
       return 'bg-red-100 text-red-800';
-    case 'transfer':
+    case 'pengembalian':
       return 'bg-blue-100 text-blue-800';
-    case 'adjustment':
+    case 'reject':
+      return 'bg-orange-100 text-orange-800';
+    case 'pengaturan':
       return 'bg-yellow-100 text-yellow-800';
     default:
       return 'bg-gray-100 text-gray-800';
