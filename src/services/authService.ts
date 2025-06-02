@@ -1,11 +1,8 @@
 
 import { supabase } from '@/integrations/supabase/client';
 import { cleanupAuthState } from '@/utils/authCleanup';
-import { useToast } from '@/hooks/use-toast';
 
 export const signInService = async (email: string, password: string) => {
-  const { toast } = useToast();
-  
   try {
     console.log('Attempting sign in for:', email);
     
@@ -31,10 +28,6 @@ export const signInService = async (email: string, password: string) => {
     
     if (data.user && data.session) {
       console.log('Sign in successful:', data.user.id);
-      toast({
-        title: "Login berhasil",
-        description: "Selamat datang kembali!",
-      });
       
       // Force page refresh to ensure clean state
       setTimeout(() => {
@@ -56,18 +49,11 @@ export const signInService = async (email: string, password: string) => {
       errorMessage = error.message;
     }
     
-    toast({
-      title: "Login gagal",
-      description: errorMessage,
-      variant: "destructive",
-    });
-    throw error;
+    throw new Error(errorMessage);
   }
 };
 
 export const signUpService = async (email: string, password: string, fullName: string) => {
-  const { toast } = useToast();
-  
   try {
     console.log('Attempting sign up for:', email);
     
@@ -92,12 +78,11 @@ export const signUpService = async (email: string, password: string, fullName: s
     
     console.log('Sign up successful:', data);
     
-    toast({
-      title: "Registrasi berhasil",
-      description: data.user?.email_confirmed_at 
-        ? "Akun Anda telah dibuat! Silakan login."
-        : "Akun Anda telah dibuat! Silakan cek email untuk konfirmasi.",
-    });
+    return {
+      user: data.user,
+      session: data.session,
+      needsConfirmation: !data.user?.email_confirmed_at
+    };
   } catch (error: any) {
     console.error('Sign up error:', error);
     
@@ -113,18 +98,11 @@ export const signUpService = async (email: string, password: string, fullName: s
       errorMessage = error.message;
     }
     
-    toast({
-      title: "Registrasi gagal",
-      description: errorMessage,
-      variant: "destructive",
-    });
-    throw error;
+    throw new Error(errorMessage);
   }
 };
 
 export const signOutService = async () => {
-  const { toast } = useToast();
-  
   try {
     console.log('Attempting sign out');
     
@@ -136,21 +114,12 @@ export const signOutService = async () => {
       console.error('Sign out error:', error);
     }
     
-    toast({
-      title: "Logout berhasil",
-      description: "Sampai jumpa lagi!",
-    });
-    
     // Force page refresh to ensure clean state
     setTimeout(() => {
       window.location.href = '/auth';
     }, 100);
   } catch (error: any) {
     console.error('Sign out error:', error);
-    toast({
-      title: "Logout gagal",
-      description: error.message || "Terjadi kesalahan saat logout",
-      variant: "destructive",
-    });
+    throw error;
   }
 };

@@ -10,6 +10,7 @@ import Layout from "./components/Layout";
 import Index from "./pages/Index";
 import Auth from "./pages/Auth";
 import Dashboard from "./pages/Dashboard";
+import Development from "./pages/Development";
 import Materials from "./pages/Materials";
 import MaterialDetails from "./pages/MaterialDetails";
 import Machines from "./pages/Machines";
@@ -44,6 +45,11 @@ function App() {
               }>
                 <Route index element={<Index />} />
                 <Route path="dashboard" element={<Dashboard />} />
+                <Route path="development" element={
+                  <ProtectedRoute requireAdmin={true}>
+                    <Development />
+                  </ProtectedRoute>
+                } />
                 <Route path="materials" element={<Materials />} />
                 <Route path="materials/:id" element={<MaterialDetails />} />
                 <Route path="machines" element={<Machines />} />

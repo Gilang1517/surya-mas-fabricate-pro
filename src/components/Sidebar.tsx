@@ -1,166 +1,146 @@
-
 import React from 'react';
-import { NavLink } from 'react-router-dom';
+import { NavLink, useLocation } from 'react-router-dom';
+import { cn } from '@/lib/utils';
 import { useAuth } from '@/hooks/useAuth';
-import PermissionGuard from '@/components/PermissionGuard';
-import { 
-  LayoutDashboard, 
-  Package, 
-  Computer, 
-  ArrowRightLeft, 
-  BarChart3, 
-  Warehouse,
-  ClipboardList,
-  FileText,
-  UserCheck,
-  Wrench,
-  Users,
+import { usePermissions } from '@/hooks/usePermissions';
+import {
+  BarChart3,
+  Package,
   Settings,
-  Shield
+  FileText,
+  Users,
+  Archive,
+  TrendingUp,
+  AlertTriangle,
+  Shield,
+  Wrench,
+  Code,
 } from 'lucide-react';
 
-const Sidebar = () => {
-  const { isAdmin } = useAuth();
+interface MenuItem {
+  href: string;
+  icon: React.ComponentType<any>;
+  label: string;
+  permission: string;
+  adminOnly?: boolean;
+}
+
+export const Sidebar: React.FC = () => {
+  const location = useLocation();
+  const { user, isAdmin } = useAuth();
+  const { hasPermission } = usePermissions();
 
   const menuItems = [
     { 
-      icon: LayoutDashboard, 
-      label: 'Dashboard', 
-      path: '/dashboard',
-      permission: 'dashboard.view'
-    },
-    { 
-      icon: Package, 
-      label: 'Materials', 
-      path: '/materials',
-      permission: 'materials.view'
-    },
-    { 
-      icon: Computer, 
-      label: 'Machines', 
-      path: '/machines',
-      permission: 'machines.view'
-    },
-    { 
-      icon: ArrowRightLeft, 
-      label: 'Transactions', 
-      path: '/transactions',
-      permission: 'transactions.view'
-    },
-    { 
-      icon: UserCheck, 
-      label: 'Machine Borrow', 
-      path: '/machine-borrow',
-      permission: 'machine_borrow.view'
-    },
-    { 
-      icon: Wrench, 
-      label: 'Machine Service', 
-      path: '/machine-service',
-      permission: 'machine_service.view'
-    },
-    { 
-      icon: Warehouse, 
-      label: 'Inventory', 
-      path: '/inventory',
-      permission: 'inventory.view'
-    },
-    { 
-      icon: ClipboardList, 
-      label: 'Stock Control', 
-      path: '/stock-control',
-      permission: 'stock_control.view'
-    },
-    { 
+      href: "/dashboard", 
       icon: BarChart3, 
-      label: 'Reports', 
-      path: '/reports',
-      permission: 'reports.view'
+      label: "Dashboard",
+      permission: "dashboard.view"
+    },
+    { 
+      href: "/development", 
+      icon: Code, 
+      label: "Development",
+      permission: "system.manage",
+      adminOnly: true
+    },
+    { 
+      href: "/materials", 
+      icon: Package, 
+      label: "Materials",
+      permission: "materials.view"
+    },
+    { 
+      href: "/machines", 
+      icon: Settings, 
+      label: "Machines",
+      permission: "machines.view"
+    },
+    { 
+      href: "/transactions", 
+      icon: FileText, 
+      label: "Transactions",
+      permission: "transactions.view"
+    },
+    { 
+      href: "/machine-transactions", 
+      icon: Wrench, 
+      label: "Machine Transactions",
+      permission: "machine_transactions.view"
+    },
+    { 
+      href: "/inventory", 
+      icon: Archive, 
+      label: "Inventory",
+      permission: "inventory.view"
+    },
+    { 
+      href: "/reports", 
+      icon: TrendingUp, 
+      label: "Reports",
+      permission: "reports.view"
+    },
+    { 
+      href: "/stock-control", 
+      icon: AlertTriangle, 
+      label: "Stock Control",
+      permission: "stock.manage"
+    },
+    { 
+      href: "/user-management", 
+      icon: Users, 
+      label: "User Management",
+      permission: "users.manage",
+      adminOnly: true
+    },
+    { 
+      href: "/permission-management", 
+      icon: Shield, 
+      label: "Permission Management",
+      permission: "permissions.manage",
+      adminOnly: true
     },
   ];
 
-  const adminMenuItems = [
-    { 
-      icon: Users, 
-      label: 'User Management', 
-      path: '/user-management',
-      permission: 'users.view'
-    },
-    { 
-      icon: Shield, 
-      label: 'Permission Management', 
-      path: '/permission-management',
-      permission: 'users.manage_roles'
-    },
-  ];
+  const filteredMenuItems = menuItems.filter(item => {
+    if (item.adminOnly && !isAdmin) {
+      return false;
+    }
+    return hasPermission(item.permission);
+  });
 
   return (
-    <div className="w-64 bg-white shadow-lg h-full flex flex-col">
-      <div className="p-6 border-b">
-        <h2 className="text-xl font-bold text-gray-800">Inventory System</h2>
-      </div>
-      
-      <nav className="flex-1 p-4">
-        <ul className="space-y-2">
-          {menuItems.map((item) => (
-            <PermissionGuard key={item.path} permission={item.permission}>
-              <li>
-                <NavLink
-                  to={item.path}
-                  className={({ isActive }) =>
-                    `flex items-center space-x-3 p-3 rounded-lg transition-colors ${
-                      isActive
-                        ? 'bg-blue-50 text-blue-600 border-r-2 border-blue-600'
-                        : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
-                    }`
-                  }
-                >
-                  <item.icon className="w-5 h-5" />
-                  <span className="font-medium">{item.label}</span>
-                </NavLink>
-              </li>
-            </PermissionGuard>
+    <div className="w-64 flex-shrink-0 border-r bg-gray-50 dark:bg-gray-900 dark:border-gray-700">
+      <div className="h-full px-3 py-4 overflow-y-auto bg-gray-50 dark:bg-gray-900">
+        <ul className="space-y-2 font-medium">
+          {filteredMenuItems.map((item) => (
+            <li key={item.href}>
+              <NavLink
+                to={item.href}
+                className={({ isActive }) =>
+                  cn(
+                    "flex items-center p-2 text-gray-900 rounded-lg dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700 group",
+                    isActive
+                      ? "bg-gray-100 dark:bg-gray-700"
+                      : ""
+                  )
+                }
+              >
+                <item.icon className="w-5 h-5 text-gray-500 dark:text-gray-400 group-hover:text-gray-900 dark:group-hover:text-white" />
+                <span className="ml-3">{item.label}</span>
+              </NavLink>
+            </li>
           ))}
-          
-          {isAdmin && (
-            <>
-              <li className="pt-4">
-                <div className="flex items-center space-x-3 px-3 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                  <Settings className="w-4 h-4" />
-                  <span>Administration</span>
-                </div>
-              </li>
-              {adminMenuItems.map((item) => (
-                <PermissionGuard key={item.path} permission={item.permission}>
-                  <li>
-                    <NavLink
-                      to={item.path}
-                      className={({ isActive }) =>
-                        `flex items-center space-x-3 p-3 rounded-lg transition-colors ${
-                          isActive
-                            ? 'bg-red-50 text-red-600 border-r-2 border-red-600'
-                            : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
-                        }`
-                      }
-                    >
-                      <item.icon className="w-5 h-5" />
-                      <span className="font-medium">{item.label}</span>
-                    </NavLink>
-                  </li>
-                </PermissionGuard>
-              ))}
-            </>
-          )}
+          <li>
+            <button onClick={() => window.location.href = '/auth'} className="flex items-center p-2 w-full text-gray-900 rounded-lg dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700 group">
+              <svg className="flex-shrink-0 w-5 h-5 text-gray-500 dark:text-gray-400 group-hover:text-gray-900 dark:group-hover:text-white transition duration-75" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 18 16">
+                <path stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M1 8h11m0 0L8 4m4 4L8 12M13 2H1m0 8h12m0 0L15 12m-2-4L15 4"/>
+              </svg>
+              <span className="ml-3">Logout</span>
+            </button>
+          </li>
         </ul>
-      </nav>
-      
-      <div className="p-4 border-t">
-        <div className="text-xs text-gray-500 text-center">
-          Inventory Management System v1.0
-        </div>
       </div>
     </div>
   );
 };
-
-export default Sidebar;

@@ -5,12 +5,14 @@ import { supabase } from '@/integrations/supabase/client';
 import { AuthContext } from '@/contexts/AuthContext';
 import { signInService, signUpService, signOutService } from '@/services/authService';
 import { cleanupAuthState } from '@/utils/authCleanup';
+import { useToast } from '@/hooks/use-toast';
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
   const [isAdmin, setIsAdmin] = useState(false);
+  const { toast } = useToast();
 
   useEffect(() => {
     console.log('AuthProvider: Setting up auth state listener');
@@ -79,14 +81,67 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return () => subscription.unsubscribe();
   }, []);
 
+  const signIn = async (email: string, password: string) => {
+    try {
+      await signInService(email, password);
+      toast({
+        title: "Login berhasil",
+        description: "Selamat datang kembali!",
+      });
+    } catch (error: any) {
+      toast({
+        title: "Login gagal",
+        description: error.message || "Terjadi kesalahan saat login",
+        variant: "destructive",
+      });
+      throw error;
+    }
+  };
+
+  const signUp = async (email: string, password: string, fullName: string) => {
+    try {
+      const result = await signUpService(email, password, fullName);
+      toast({
+        title: "Registrasi berhasil",
+        description: result.needsConfirmation 
+          ? "Akun Anda telah dibuat! Silakan cek email untuk konfirmasi."
+          : "Akun Anda telah dibuat! Silakan login.",
+      });
+      return result;
+    } catch (error: any) {
+      toast({
+        title: "Registrasi gagal",
+        description: error.message || "Terjadi kesalahan saat registrasi",
+        variant: "destructive",
+      });
+      throw error;
+    }
+  };
+
+  const signOut = async () => {
+    try {
+      await signOutService();
+      toast({
+        title: "Logout berhasil",
+        description: "Sampai jumpa lagi!",
+      });
+    } catch (error: any) {
+      toast({
+        title: "Logout gagal",
+        description: error.message || "Terjadi kesalahan saat logout",
+        variant: "destructive",
+      });
+    }
+  };
+
   const value = {
     user,
     session,
     loading,
     isAdmin,
-    signIn: signInService,
-    signUp: signUpService,
-    signOut: signOutService,
+    signIn,
+    signUp,
+    signOut,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
