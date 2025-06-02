@@ -81,6 +81,12 @@ export const Sidebar: React.FC = () => {
       permission: "reports.view"
     },
     { 
+      href: "/material-stock-report", 
+      icon: FileText, 
+      label: "Laporan Stock Material",
+      permission: "reports.view"
+    },
+    { 
       href: "/stock-control", 
       icon: AlertTriangle, 
       label: "Stock Control",

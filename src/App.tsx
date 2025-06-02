@@ -1,3 +1,4 @@
+
 import React from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
@@ -21,6 +22,7 @@ import MachineBorrow from "./pages/MachineBorrow";
 import MachineService from "./pages/MachineService";
 import Inventory from "./pages/Inventory";
 import Reports from "./pages/Reports";
+import MaterialStockReport from "./pages/MaterialStockReport";
 import StockControl from "./pages/StockControl";
 import UserManagement from "./pages/UserManagement";
 import PermissionManagement from "./pages/PermissionManagement";
