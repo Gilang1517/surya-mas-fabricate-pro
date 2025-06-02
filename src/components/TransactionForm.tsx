@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { useForm } from 'react-hook-form';
 import { X } from 'lucide-react';
@@ -59,28 +58,23 @@ const TransactionForm = ({ onClose, onSubmit }: TransactionFormProps) => {
     switch (type) {
       case 'penerimaan':
         return [
-          { value: '101', label: '101 - Penerimaan dari Purchase Order' },
-          { value: '102', label: '102 - Pembatalan Penerimaan' },
+          { value: 'penerimaan', label: 'Penerimaan' },
         ];
       case 'pemakaian':
         return [
-          { value: '201', label: '201 - Pemakaian untuk Cost Center' },
-          { value: '261', label: '261 - Pemakaian untuk Production Order' },
+          { value: 'pemakaian', label: 'Pemakaian' },
         ];
       case 'pengembalian':
         return [
-          { value: '302', label: '302 - Pengembalian ke Gudang' },
-          { value: '312', label: '312 - Transfer Pengembalian' },
+          { value: 'pengembalian', label: 'Pengembalian' },
         ];
       case 'reject':
         return [
-          { value: '551', label: '551 - Material Reject' },
-          { value: '552', label: '552 - Material Cacat' },
+          { value: 'reject', label: 'Terjadi Reject' },
         ];
       case 'pengaturan':
         return [
-          { value: '701', label: '701 - Penyesuaian Stock' },
-          { value: '702', label: '702 - Koreksi Inventory' },
+          { value: 'pengaturan', label: 'Pengaturan' },
         ];
       default:
         return [];
